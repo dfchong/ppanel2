@@ -1,0 +1,39 @@
+package tool
+
+import (
+	"context"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/perfect-panel/server/internal/model/dto"
+	"github.com/perfect-panel/server/internal/svc"
+	"github.com/perfect-panel/server/pkg/httpx"
+	"github.com/perfect-panel/server/pkg/result"
+)
+
+// QueryIPLocationHandler documents Query IP Location.
+//
+// @Summary Query IP Location
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request query dto.QueryIPLocationRequest false "Request parameters"
+// @Success 200 {object} result.ResponseSuccessBean{data=dto.QueryIPLocationResponse}
+// @Router /v1/admin/tool/ip/location [get]
+func QueryIPLocationHandler(svcCtx *svc.ServiceContext) app.HandlerFunc {
+	return func(ctx context.Context, c *app.RequestContext) {
+		var req dto.QueryIPLocationRequest
+		if err := httpx.ShouldBind(c, &req); err != nil {
+			result.ParamErrorResult(c, err)
+			return
+		}
+		validateErr := svcCtx.Validate(&req)
+		if validateErr != nil {
+			result.ParamErrorResult(c, validateErr)
+			return
+		}
+
+		resp, err := svcCtx.Platform.QueryIPLocation(ctx, &req)
+		result.HttpResult(c, resp, err)
+	}
+}

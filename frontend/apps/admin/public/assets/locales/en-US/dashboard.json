@@ -1,0 +1,33 @@
+{
+  "billing": {
+    "description": "Sponsoring helps PPanel to continue releasing updates!",
+    "title": "Sponsor"
+  },
+  "currentlyOnline": "Currently Online",
+  "month": "Month",
+  "monthTraffic": "Month Traffic",
+  "newPurchase": "New Purchase",
+  "nodes": "Nodes",
+  "nodeTraffic": "Node Traffic",
+  "offline": "Offline",
+  "online": "Online",
+  "onlineUsersCount": "Online Users",
+  "pending": "Pending",
+  "pendingTickets": "Pending Tickets",
+  "register": "Register",
+  "repurchase": "Repurchase",
+  "revenueTitle": "Revenue Statistics",
+  "selectTypePlaceholder": "Select Type",
+  "today": "Today",
+  "todayTraffic": "Today Traffic",
+  "total": "Total",
+  "totalIncome": "Total Income",
+  "totalServers": "Total Servers",
+  "traffic": "Traffic",
+  "trafficRank": "Traffic Rank",
+  "type": "Type",
+  "users": "Users",
+  "userTitle": "User Statistics",
+  "userTraffic": "User Traffic",
+  "yesterday": "Yesterday"
+}

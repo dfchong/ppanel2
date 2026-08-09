@@ -1,0 +1,33 @@
+{
+  "billing": {
+    "description": "赞助帮助 PPanel 继续发布更新！",
+    "title": "赞助"
+  },
+  "currentlyOnline": "当前在线",
+  "month": "月",
+  "monthTraffic": "本月流量",
+  "newPurchase": "新购",
+  "nodes": "节点",
+  "nodeTraffic": "节点流量",
+  "offline": "离线",
+  "online": "在线",
+  "onlineUsersCount": "在线用户数",
+  "pending": "待处理",
+  "pendingTickets": "待处理工单",
+  "register": "注册",
+  "repurchase": "续费",
+  "revenueTitle": "收入统计",
+  "selectTypePlaceholder": "选择类型",
+  "today": "今日",
+  "todayTraffic": "今日流量",
+  "total": "总计",
+  "totalIncome": "总收入",
+  "totalServers": "服务器总数",
+  "traffic": "流量",
+  "trafficRank": "流量排行",
+  "type": "类型",
+  "users": "用户",
+  "userTitle": "用户统计",
+  "userTraffic": "用户流量",
+  "yesterday": "昨日"
+}

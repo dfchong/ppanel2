@@ -1,0 +1,21 @@
+# ============================================================================
+# CORS 合法来源白名单 ConfigMap（namespace: ppanel2）
+#   后端启动时读取 /app/etc/cors.yaml（由本 ConfigMap 挂载），
+#   并且支持热重载：修改本 ConfigMap 后 kubectl apply，等待 kubelet 同步
+#   文件（数秒~1分钟），无需重启 Pod 即可生效。
+#   ⚠️ 请将下方 AllowOrigins 替换为你实际的 Cloudflare Pages 前端域名
+#      （可填写多个，每行一个）。
+# ============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ppanel-cors
+  namespace: ppanel2
+data:
+  cors.yaml: |
+    # 合法跨域来源（浏览器前端域名，必须与浏览器地址栏 Origin 完全一致）
+    AllowOrigins:
+      - "https://users007.lightree.uk"
+      - "https://xxadmin.lightree.uk"
+    # 预检缓存时长（秒），沿用原有默认值
+    MaxAge: "172800"

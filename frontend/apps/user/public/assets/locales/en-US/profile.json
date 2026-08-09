@@ -1,0 +1,31 @@
+{
+  "accountSettings": {
+    "accountSettings": "Account Settings",
+    "newPassword": "New Password",
+    "passwordMismatch": "Passwords do not match",
+    "repeatNewPassword": "Repeat New Password",
+    "updatePassword": "Update Password",
+    "updateSuccess": "Password updated successfully"
+  },
+  "notify": {
+    "balanceChange": "Balance Change Notification",
+    "finance": "Finance Notification",
+    "login": "Login Notification",
+    "notificationSettings": "Notification Settings",
+    "save": "Save",
+    "subscribe": "Subscribe Notification",
+    "updateSuccess": "Notification settings updated successfully"
+  },
+  "thirdParty": {
+    "bind": "thirdParty.bind",
+    "bindFailed": "Bind failed",
+    "bindMobile": "Bind Mobile",
+    "bindSuccess": "Bind successfully",
+    "confirm": "Confirm",
+    "save": "thirdParty.save",
+    "title": "Third-party Accounts",
+    "unbind": "thirdParty.unbind",
+    "update": "thirdParty.update",
+    "updateSuccess": "Update successfully"
+  }
+}

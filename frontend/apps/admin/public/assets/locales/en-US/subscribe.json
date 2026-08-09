@@ -1,0 +1,123 @@
+{
+  "actions": {
+    "add": "Add",
+    "batchDelete": "Batch Delete",
+    "batchDeleteSuccess_one": "Successfully deleted {count} clients",
+    "batchDeleteSuccess_other": "Successfully deleted {count} clients",
+    "batchDeleteWarning_one": "Are you sure you want to delete the selected {count} clients?",
+    "batchDeleteWarning_other": "Are you sure you want to delete the selected {count} clients?",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "confirmDelete": "Confirm Delete",
+    "createSuccess": "Created successfully",
+    "delete": "Delete",
+    "deleteFailed": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "deleteWarning": "This operation cannot be undone. Are you sure you want to delete this client?",
+    "edit": "Edit",
+    "save": "Save",
+    "saveFailed": "Save failed",
+    "update": "Update",
+    "updateSuccess": "Updated successfully"
+  },
+  "config": {
+    "description": "Manage subscription system settings",
+    "singleSubscriptionMode": "Single Subscription Mode",
+    "singleSubscriptionModeDescription": "Limit users to one active subscription. Existing subscriptions unaffected",
+    "showTutorial": "Show Tutorial Section",
+    "showTutorialDescription": "Show the client tutorial section on the user document page",
+    "subscriptionDomain": "Subscription Domain",
+    "subscriptionDomainDescription": "Custom domain for subscription links",
+    "subscriptionDomainPlaceholder": "Enter subscription domain, one per line",
+    "subscriptionPath": "Subscription Path",
+    "subscriptionPathDescription": "Custom path for subscription endpoints (better performance after system restart)",
+    "subscriptionPathPlaceholder": "Enter subscription path",
+    "title": "Subscription Configuration",
+    "updateError": "Update failed",
+    "updateSuccess": "Settings updated successfully",
+    "userAgentLimit": "{{userAgent}} Restriction",
+    "userAgentLimitDescription": "Enable access restrictions based on {{userAgent}}",
+    "userAgentList": "{{userAgent}} Whitelist",
+    "userAgentListDescription": "Allowed {{userAgent}} for subscription access, one per line. Configured application {{userAgent}} will be automatically included",
+    "userAgentListPlaceholder": "Enter allowed {{userAgent}}, one per line",
+    "wildcardResolution": "Wildcard Resolution",
+    "wildcardResolutionDescription": "Enable wildcard domain resolution for subscriptions"
+  },
+  "form": {
+    "addTitle": "Add Client",
+    "descriptions": {
+      "description": "Detailed client description",
+      "downloadLink": "platform download URL",
+      "icon": "Icon URL or base64 encoding",
+      "name": "Client display name",
+      "outputFormat": "Subscription configuration file format",
+      "scheme": {
+        "base64Encoding": "Base64 encoding",
+        "functions": "Supports functions:",
+        "jsonStringify": "JSON object to string",
+        "nameVariable": "site name",
+        "title": "URL Scheme template",
+        "urlEncoding": "URL encoding",
+        "urlVariable": "subscription URL",
+        "variables": "Supports variables:"
+      },
+      "template": {
+        "functions": "Template functions:",
+        "if": "conditional statements",
+        "nodes": "proxy nodes list",
+        "range": "iterate arrays",
+        "siteName": "site name",
+        "sprig": "Sprig function library (string processing, dates, etc.)",
+        "subscribeName": "subscription name",
+        "title": "Go Template Syntax",
+        "userInfo": "user info (traffic, expiry, etc.)",
+        "variables": "Available variables:"
+      },
+      "userAgentPrefix": "Client identifier for distinguishing different clients"
+    },
+    "editTitle": "Edit Client",
+    "fields": {
+      "description": "Description",
+      "icon": "Icon",
+      "name": "Name",
+      "outputFormat": "Output Format",
+      "scheme": "URL Scheme",
+      "template": "Subscription File Template"
+    },
+    "tabs": {
+      "basic": "Basic Info",
+      "download": "Downloads",
+      "template": "Templates"
+    }
+  },
+  "outputFormats": {
+    "base64": "Base64",
+    "conf": "CONF",
+    "json": "JSON",
+    "plain": "Plain Text",
+    "yaml": "YAML"
+  },
+  "protocol": {
+    "title": "Client Management"
+  },
+  "table": {
+    "columns": {
+      "default": "Default",
+      "description": "Description",
+      "name": "Client Name",
+      "outputFormat": "Output Format",
+      "supportedPlatforms": "Supported Platforms"
+    }
+  },
+  "templatePreview": {
+    "base64": {
+      "decodedContent": "Decoded Content",
+      "decodeError": "Base64 decode error",
+      "originalContent": "Original Content"
+    },
+    "failed": "Failed to load template",
+    "loading": "Loading...",
+    "preview": "Preview",
+    "title": "Template Preview"
+  }
+}

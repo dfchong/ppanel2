@@ -1,0 +1,31 @@
+{
+  "accountSettings": {
+    "accountSettings": "账户设置",
+    "newPassword": "新密码",
+    "passwordMismatch": "密码不匹配",
+    "repeatNewPassword": "重复新密码",
+    "updatePassword": "更新密码",
+    "updateSuccess": "密码更新成功"
+  },
+  "notify": {
+    "balanceChange": "余额变动通知",
+    "finance": "财务通知",
+    "login": "登录通知",
+    "notificationSettings": "通知设置",
+    "save": "保存",
+    "subscribe": "订阅通知",
+    "updateSuccess": "通知设置更新成功"
+  },
+  "thirdParty": {
+    "bind": "绑定",
+    "bindFailed": "绑定失败",
+    "bindMobile": "绑定手机",
+    "bindSuccess": "绑定成功",
+    "confirm": "确认",
+    "save": "保存",
+    "title": "第三方账户",
+    "unbind": "解绑",
+    "update": "更新",
+    "updateSuccess": "更新成功"
+  }
+}

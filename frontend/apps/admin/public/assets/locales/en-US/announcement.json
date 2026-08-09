@@ -1,0 +1,30 @@
+{
+  "announcementList": "Announcement List",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "confirmDelete": "Confirm Delete",
+  "content": "Content",
+  "create": "Create",
+  "createAnnouncement": "Create Announcement",
+  "createSuccess": "Created successfully",
+  "delete": "Delete",
+  "deleteDescription": "This action cannot be undone.",
+  "deleteSuccess": "Deleted successfully",
+  "edit": "Edit",
+  "editAnnouncement": "Edit Announcement",
+  "enable": "Enable",
+  "form": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "content": "Content",
+    "title": "Title",
+    "titlePlaceholder": "Enter title"
+  },
+  "hide": "Hide",
+  "pinned": "Pinned",
+  "popup": "Popup",
+  "show": "Show",
+  "title": "Title",
+  "updatedAt": "Updated At",
+  "updateSuccess": "Updated successfully"
+}

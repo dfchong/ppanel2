@@ -1,0 +1,88 @@
+# ============================================================================
+# ppanel-server 后端 Deployment + Service（namespace: ppanel2）
+#   - 镜像：dfchong/ppanel2:0.2（公开于 Docker Hub，见 deploy/backend/build.sh）
+#   - 配置：挂载 Secret ppanel-secret 的 ppanel.yaml 到 /app/etc/ppanel.yaml
+#   - mmdb 已内置镜像；启动 panic 三条件：数据库 / mmdb / Redis(Valkey)
+#   - 健康检查：后端 API 一律返回 HTTP 200 结构体，probe 判断 200 即可
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppanel-server
+  namespace: ppanel2
+  labels:
+    app: ppanel-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ppanel-server
+  template:
+    metadata:
+      labels:
+        app: ppanel-server
+    spec:
+      containers:
+        - name: ppanel-server
+          image: dfchong/ppanel2:0.2
+          imagePullPolicy: IfNotPresent
+          args: ["run", "--config", "etc/ppanel.yaml"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc/ppanel.yaml
+              subPath: ppanel.yaml
+              readOnly: true
+            # 目录挂载（非 subPath），保留 kubelet 的 ..data 原子替换，
+            # 使后端按 mtime/size 的热重载能感知 ConfigMap 更新。
+            - name: cors-config
+              mountPath: /app/etc/cors.d
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /v1/common/site/config
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /v1/common/site/config
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+      volumes:
+        - name: config
+          secret:
+            secretName: ppanel-secret
+        - name: cors-config
+          configMap:
+            name: ppanel-cors
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppanel-server
+  namespace: ppanel2
+spec:
+  selector:
+    app: ppanel-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

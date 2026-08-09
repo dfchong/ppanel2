@@ -1,0 +1,26 @@
+{
+  "cancel": "Cancel",
+  "check": "Check",
+  "close": "Close",
+  "closeSuccess": "Close Success",
+  "closeWarning": "Are you sure you want to close this ticket?",
+  "confirm": "Confirm",
+  "confirmClose": "Confirm Close",
+  "createSuccess": "Create Success",
+  "createTicket": "Create Ticket",
+  "createTicketDescription": "Create Ticket Description",
+  "description": "Description",
+  "inputPlaceholder": "Input Placeholder",
+  "reply": "Reply",
+  "status": {
+    "0": "Status",
+    "1": "Pending Reply",
+    "2": "Pending Follow-up",
+    "3": "Resolved",
+    "4": "Closed"
+  },
+  "submit": "Submit",
+  "ticketList": "Ticket List",
+  "title": "Title",
+  "updatedAt": "Updated At"
+}

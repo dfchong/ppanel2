@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scalar API Reference</title>
+    <style>
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #0b0e13;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    #scalar-root::-webkit-scrollbar {
+      display: none;
+    }
+
+    #scalar-root {
+      min-height: 100%;
+    }
+
+    .scalar-app .scalar-api-reference.references-layout,
+    .scalar-app .references-layout {
+      min-height: auto !important;
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </head>
+  <body>
+    <div id="scalar-root"></div>
+    <script src="./scalar-embed.js"></script>
+  </body>
+</html>

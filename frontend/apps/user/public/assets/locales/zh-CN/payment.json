@@ -1,0 +1,27 @@
+{
+  "stripe": {
+    "card": {
+      "loading": "正在加载 Stripe..."
+    },
+    "card_name": "",
+    "card_number": "",
+    "element_error": "",
+    "error": "发生错误",
+    "expiry_date": "",
+    "loading": "",
+    "name_placeholder": "",
+    "name_required": "",
+    "pay_button": "",
+    "payment_failed": "",
+    "processing": "",
+    "processing_button": "",
+    "qrcode": {
+      "alipay": "使用支付宝扫码支付",
+      "wechat_pay": "使用微信扫码支付"
+    },
+    "secure_notice": "",
+    "security_code": "",
+    "success_message": "",
+    "success_title": ""
+  }
+}

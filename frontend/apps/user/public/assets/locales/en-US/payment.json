@@ -1,0 +1,27 @@
+{
+  "stripe": {
+    "card": {
+      "loading": "Loading Stripe..."
+    },
+    "card_name": "Cardholder Name",
+    "card_number": "Card Number",
+    "element_error": "Please fill in all card details",
+    "error": "An error occurred",
+    "expiry_date": "Expiry Date",
+    "loading": "Loading Stripe...",
+    "name_placeholder": "Full Name on Card",
+    "name_required": "Cardholder name is required",
+    "pay_button": "Pay Now",
+    "payment_failed": "Payment failed",
+    "processing": "Processing payment...",
+    "processing_button": "Processing...",
+    "qrcode": {
+      "alipay": "Scan with Alipay to pay",
+      "wechat_pay": "Scan with WeChat to pay"
+    },
+    "secure_notice": "Payments are secure and encrypted",
+    "security_code": "CVC",
+    "success_message": "Thank you for your purchase. Your order has been processed.",
+    "success_title": "Payment Successful"
+  }
+}

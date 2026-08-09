@@ -1,0 +1,29 @@
+{
+  "amount": "Amount",
+  "couponDiscount": "Coupon Discount",
+  "discount": "Discount Amount",
+  "feeAmount": "Fee Amount",
+  "method": "Payment Method",
+  "orderNumber": "Order Number",
+  "status": {
+    "0": "Status",
+    "1": "Pending",
+    "2": "Paid",
+    "3": "Cancelled",
+    "4": "Closed",
+    "5": "Completed"
+  },
+  "subscribe": "Subscribe",
+  "subscribePrice": "Subscription Price",
+  "total": "Total",
+  "tradeNo": "Transaction Number",
+  "type": {
+    "0": "Type",
+    "1": "New Purchase",
+    "2": "Renewal",
+    "3": "Reset Traffic",
+    "4": "Recharge"
+  },
+  "updateTime": "Update Time",
+  "user": "User"
+}

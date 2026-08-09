@@ -1,0 +1,40 @@
+{
+  "balanceRecharge": "余额充值",
+  "cancel": "取消",
+  "createdAt": "创建时间",
+  "detail": "详情",
+  "goToPayment": "去支付",
+  "name": "商品名称",
+  "orderClosed": "订单已关闭",
+  "orderList": "订单列表",
+  "orderNo": "订单号",
+  "orderNumber": "订单编号",
+  "payment": "支付",
+  "paymentAmount": "支付金额",
+  "paymentMethod": "支付方式",
+  "paymentSuccess": "支付成功",
+  "productList": "商品列表",
+  "rechargeAmount": "充值金额",
+  "resetPrice": "重置价格",
+  "resetTraffic": "重置流量",
+  "scanToPay": "扫码支付",
+  "status": {
+    "0": "状态",
+    "1": "待支付",
+    "2": "已支付",
+    "3": "已取消",
+    "4": "已关闭",
+    "5": "已完成"
+  },
+  "subscribeNow": "立即订阅",
+  "timeExpired": "时间已过期",
+  "type": {
+    "0": "类型",
+    "1": "新购",
+    "2": "续费",
+    "3": "重置流量",
+    "4": "充值"
+  },
+  "viewDocument": "查看文档",
+  "waitingForPayment": "等待支付"
+}

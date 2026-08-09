@@ -1,0 +1,19 @@
+{
+  "name": "docs",
+  "private": true,
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "vitepress": "^1.6.4",
+    "vitepress-theme-teek": "^1.2.1",
+    "vitepress-plugin-sidebar-resolve": "^1.2.1",
+    "vitepress-plugin-permalink": "^1.2.1",
+    "vitepress-plugin-catalogue": "^1.1.2",
+    "vitepress-plugin-doc-analysis": "^1.0.13",
+    "vitepress-plugin-file-content-loader": "^1.0.13",
+    "vue": "^3.5.13"
+  }
+}

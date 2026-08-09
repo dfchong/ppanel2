@@ -1,0 +1,169 @@
+{
+  "repositoryUrl": "https://github.com/perfect-panel/frontend",
+  "branches": [
+    "main",
+    {
+      "name": "beta",
+      "prerelease": true
+    },
+    {
+      "name": "alpha",
+      "prerelease": true
+    },
+    {
+      "name": "develop",
+      "prerelease": "dev"
+    },
+    {
+      "name": "next",
+      "prerelease": true
+    }
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "perf", "release": "patch" },
+          { "type": "revert", "release": "patch" },
+          { "type": "docs", "release": false },
+          { "type": "style", "release": false },
+          { "type": "chore", "release": false },
+          { "type": "refactor", "release": "patch" },
+          { "type": "test", "release": false },
+          { "type": "build", "release": false },
+          { "type": "ci", "release": false },
+          { "release": "major", "breaking": true },
+          { "release": "patch", "subject": "*force patch*" },
+          { "release": "minor", "subject": "*force minor*" },
+          { "release": "major", "subject": "*force major*" },
+          { "release": false, "subject": "*skip release*" },
+          { "release": false, "subject": "*no release*" },
+          { "release": "patch", "revert": true },
+          { "release": "patch", "type": "security" },
+          { "release": "minor", "type": "deprecate" }
+        ],
+        "parserOpts": {
+          "headerPattern": "^(?:(\\u00a9|\\u00ae|[\\u2000-\\u3300]|\\ud83c[\\ud000-\\udfff]|\\ud83d[\\ud000-\\udfff]|\\ud83e[\\ud000-\\udfff])\\s*)?(\\w*)(?:\\((.*)\\))?!?:\\s*(.*)$",
+          "headerCorrespondence": ["emoji", "type", "scope", "subject"],
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES", "BREAKING"],
+          "revertPattern": "^(?:Revert|revert:)\\s\"?([\\s\\S]*)\"?\\s*This reverts commit (\\w*)\\.?",
+          "revertCorrespondence": ["header", "hash"]
+        }
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            {
+              "type": "feat",
+              "section": "✨ Features / 新功能"
+            },
+            {
+              "type": "fix",
+              "section": "🐛 Bug Fixes / 问题修复"
+            },
+            {
+              "type": "docs",
+              "section": "📚 Documentation / 文档更新"
+            },
+            {
+              "type": "style",
+              "section": "🎨 Code Style / 代码格式"
+            },
+            {
+              "type": "refactor",
+              "section": "♻️ Code Refactoring / 代码重构"
+            },
+            {
+              "type": "perf",
+              "section": "⚡️ Performance Improvements / 性能优化"
+            },
+            {
+              "type": "test",
+              "section": "🧪 Tests / 测试相关"
+            },
+            {
+              "type": "build",
+              "section": "🔨 Build System / 构建系统"
+            },
+            {
+              "type": "ci",
+              "section": "👷 Continuous Integration / CI/CD"
+            },
+            {
+              "type": "chore",
+              "section": "🔧 Chores / 其他变更"
+            }
+          ]
+        },
+        "parserOpts": {
+          "headerPattern": "^(?:(\\u00a9|\\u00ae|[\\u2000-\\u3300]|\\ud83c[\\ud000-\\udfff]|\\ud83d[\\ud000-\\udfff]|\\ud83e[\\ud000-\\udfff])\\s*)?(\\w*)(?:\\((.*)\\))?!?:\\s*(.*)$",
+          "headerCorrespondence": ["emoji", "type", "scope", "subject"],
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES", "BREAKING"],
+          "revertPattern": "^(?:Revert|revert:)\\s\"?([\\s\\S]*)\"?\\s*This reverts commit (\\w*)\\.?",
+          "revertCorrespondence": ["header", "hash"]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# 📋 Changelog / 更新日志\n\nThis document records all notable changes to ShadCN Admin.\n本文档记录了 ShadCN Admin 的所有重要变更。\n\n## Version Guide / 版本说明\n- 🔥 **Breaking Changes / 重大变更**: Contains breaking updates / 包含破坏性更新\n- ✨ **Features / 新功能**: New features added / 添加的新特性\n- 🐛 **Bug Fixes / 问题修复**: Fixed bugs / 修复的bug\n- 📚 **Documentation / 文档**: Documentation updates / 文档相关更新\n- 🎨 **Style / 样式**: Code formatting and style changes / 代码格式化、样式调整\n- ♻️ **Refactoring / 重构**: Code refactoring / 代码重构\n- ⚡️ **Performance / 性能**: Performance improvements / 性能优化\n- 🧪 **Tests / 测试**: Test related changes / 测试相关\n- 🔨 **Build / 构建**: Build system changes / 构建系统相关\n- 👷 **CI/CD**: Continuous integration changes / CI/CD相关\n- 🔧 **Chores / 杂项**: Other changes / 其他变更\n\n---\n"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json"],
+        "message": "🚀 chore(release): Release ${nextRelease.version} / 发布版本 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bun run build && tar -czf admin.tar.gz -C apps/admin/dist . && tar -czf user.tar.gz -C apps/user/dist . && echo 'VITE_API_PREFIX=/api' > apps/admin/.env && echo 'VITE_API_PREFIX=/api' > apps/user/.env && bun run build && tar -czf admin-with-api.tar.gz -C apps/admin/dist . && tar -czf user-with-api.tar.gz -C apps/user/dist ."
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "admin.tar.gz",
+            "name": "ppanel-admin-web.tar.gz",
+            "label": "Admin Web (without API prefix)"
+          },
+          {
+            "path": "user.tar.gz",
+            "name": "ppanel-user-web.tar.gz",
+            "label": "User Web (without API prefix)"
+          },
+          {
+            "path": "admin-with-api.tar.gz",
+            "name": "ppanel-admin-web-with-api.tar.gz",
+            "label": "Admin Web (with /api prefix)"
+          },
+          {
+            "path": "user-with-api.tar.gz",
+            "name": "ppanel-user-web-with-api.tar.gz",
+            "label": "User Web (with /api prefix)"
+          }
+        ]
+      }
+    ]
+  ]
+}
