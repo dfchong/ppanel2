@@ -17,7 +17,9 @@ ARG VERSION=unknown
 ARG CHANNEL=dev
 # GeoLite2 数据库下载源（可替换为内网镜像源加速）
 ARG GEODB_URL=https://raw.githubusercontent.com/adysec/IP_database/main/geolite/GeoLite2-City.mmdb
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH}
+# Go 模块代理（proxy.golang.org 在国内常返回 403，构建时可替换为 goproxy.cn）
+ARG GOPROXY=https://goproxy.cn,direct
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} GOPROXY=${GOPROXY}
 
 # 合并 apk 命令减少层体积；curl 用于下载 mmdb
 RUN apk update --no-cache && apk add --no-cache tzdata ca-certificates curl

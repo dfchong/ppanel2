@@ -13,6 +13,8 @@
 #   PLATFORM   构建平台（默认 linux/amd64）
 #   CHANNEL    渠道（默认 release）
 #   BUILD_TOOL 构建工具（自动探测 docker|buildah，可显式指定）
+#   NETWORK    构建网络（默认 host；受限环境缺 netavark 时 host 可绕过）
+#   GOPROXY    Go 模块代理（默认 https://goproxy.cn,direct）
 # ============================================================================
 set -euo pipefail
 
@@ -24,6 +26,13 @@ REGISTRY="${REGISTRY:-registry.example.com/ppanel/ppanel-server}"
 TAG="${TAG:-$(git -C "$ROOT" describe --tags --always 2>/dev/null || echo dev)}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 CHANNEL="${CHANNEL:-release}"
+NETWORK="${NETWORK:-host}"
+# 国内构建默认使用 goproxy.cn；忽略系统默认注入的 proxy.golang.org
+# （该镜像源在国内常返回 403）。如需自定义代理，可显式设置 GOPROXY 覆盖。
+GOPROXY="${GOPROXY:-https://goproxy.cn,direct}"
+if [ "${GOPROXY}" = "https://proxy.golang.org,direct" ]; then
+  GOPROXY="https://goproxy.cn,direct"
+fi
 IMAGE="${REGISTRY}:${TAG}"
 
 # ---- 构建工具探测：优先 docker，无则 buildah ----
@@ -75,8 +84,10 @@ else
   # （RUN 步骤经 chroot 直接执行，不依赖 OCI runtime 与 cgroup）。
   $BUILDAH_BIN --storage-driver "${STORAGE_DRIVER:-vfs}" build --format docker \
     --isolation "${ISOLATION:-chroot}" \
+    --network "${NETWORK}" \
     --build-arg VERSION="${TAG}" \
     --build-arg CHANNEL="${CHANNEL}" \
+    --build-arg GOPROXY="${GOPROXY}" \
     -t "${IMAGE}" \
     -f "${DOCKERFILE}" \
     "${BUILD_DIR}"
