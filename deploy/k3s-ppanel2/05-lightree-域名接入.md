@@ -1,6 +1,6 @@
 # ppanel2 —— lightree.uk 域名接入（Cloudflare 侧操作）
 
-> 适用范围：后端已部署 `dfchong/ppanel2:0.2`（namespace `ppanel2`），
+> 适用范围：后端已部署 `dfchong/ppanel2:0.3`（namespace `ppanel2`），
 > CORS 白名单由后端源码内置并从 `ppanel-cors` ConfigMap 读取（支持热重载）。
 > **已不再使用 Cloudflare Worker / Caddy 处理 CORS。**
 >
@@ -71,7 +71,7 @@
 
 ## 4. 后端侧已完成项（无需再操作）
 
-- 镜像 `dfchong/ppanel2:0.2` 已构建并推送（含白名单 CORS + `etc/cors.d/cors.yaml` 目录挂载热重载）。
+- 镜像 `dfchong/ppanel2:0.3` 已构建并推送（含白名单 CORS + `etc/cors.d/cors.yaml` 目录挂载热重载）。
 - `ppanel-cors` ConfigMap 白名单：`https://users007.lightree.uk`、`https://xxadmin.lightree.uk`。
 - 订阅域名 `subpp.lightree.uk` 已通过管理端 API 写入数据库系统配置（`/v1/admin/system/subscribe_config`），
   `site/config` 返回 `subscribe_domain=subpp.lightree.uk`。

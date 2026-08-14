@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
 # 顺序应用 ppanel2 k3s 清单并等待后端就绪
-#   范围：namespace + Secret + 后端 Deployment/Service（镜像 dfchong/ppanel2:0.1）
+#   范围：namespace + Secret + 后端 Deployment/Service（镜像 dfchong/ppanel2:0.3）
 #   云隧道 cloudflared 属后续步骤（需先创建 Tunnel 凭据），不在此脚本内。
 # 用法：./04-apply.sh
 # ============================================================================

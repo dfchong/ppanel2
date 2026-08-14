@@ -40,6 +40,9 @@ go.work.sum
 # k8s Secret 清单含真实生产密码（JWT / 数据库 / Valkey），严禁提交
 deploy/k3s-ppanel2/02-ppanel-secret.yaml
 
+# 数据库备份（含用户/订单等生产敏感数据），严禁提交
+deploy/backups/
+
 # 后端本地运行生成的真实配置（仓库内为空，首次运行自动创建）
 backend/etc/ppanel.yaml
 
