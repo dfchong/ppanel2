@@ -124,12 +124,23 @@ export default function SubscribeForm<T extends Record<string, any>>({
     show_original_price: z.boolean().optional(),
   });
 
+  const normalizeInitialValues = () => {
+    const values = shake(
+      initialValues,
+      (value) => value === null
+    ) as Record<string, any>;
+    // Backend serializes `nodes` as string[] (StringInt64Slice) even though the
+    // API type declares number[]; normalize to number[] so the checkbox
+    // comparison below (item.id is a number) matches saved nodes.
+    if (Array.isArray(values.nodes)) {
+      values.nodes = values.nodes.map((id) => Number(id));
+    }
+    return values;
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: assign(
-      defaultValues,
-      shake(initialValues, (value) => value === null) as Record<string, any>
-    ),
+    defaultValues: assign(defaultValues, normalizeInitialValues()),
   });
 
   const debouncedCalculateDiscount = useCallback(
@@ -234,12 +245,7 @@ export default function SubscribeForm<T extends Record<string, any>>({
   );
 
   useEffect(() => {
-    form?.reset(
-      assign(
-        defaultValues,
-        shake(initialValues, (value) => value === null) as Record<string, any>
-      )
-    );
+    form?.reset(assign(defaultValues, normalizeInitialValues()));
     const discount = form.getValues("discount") || [];
     if (discount.length > 0) {
       debouncedCalculateDiscount(discount, "discount");
@@ -997,18 +1003,20 @@ export default function SubscribeForm<T extends Record<string, any>>({
                                     key={item.id}
                                   >
                                     <Checkbox
-                                      checked={value.includes(item.id!)}
+                                      checked={value
+                                        .map(Number)
+                                        .includes(item.id!)}
                                       onCheckedChange={(checked) =>
                                         checked
                                           ? form.setValue(field.name, [
-                                              ...value,
+                                              ...value.map(Number),
                                               item.id,
                                             ])
                                           : form.setValue(
                                               field.name,
                                               value.filter(
                                                 (value: number) =>
-                                                  value !== item.id
+                                                  Number(value) !== item.id
                                               )
                                             )
                                       }
