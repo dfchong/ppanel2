@@ -3,7 +3,6 @@ package plan
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
 	"github.com/perfect-panel/server/internal/model/dto"
 	"github.com/perfect-panel/server/pkg/logger"
@@ -42,6 +41,6 @@ func (l *GetSubscribeDetailsLogic) GetSubscribeDetails(req *dto.GetSubscribeDeta
 		}
 	}
 	resp.Nodes = dto.StringInt64Slice(tool.StringToInt64Slice(sub.Nodes))
-	resp.NodeTags = strings.Split(sub.NodeTags, ",")
+	resp.NodeTags = splitNodeTags(sub.NodeTags)
 	return resp, nil
 }

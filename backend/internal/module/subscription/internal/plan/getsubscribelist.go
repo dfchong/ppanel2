@@ -3,7 +3,6 @@ package plan
 import (
 	"context"
 	"encoding/json"
-	"strings"
 
 	"github.com/perfect-panel/server/internal/model/dto"
 	"github.com/perfect-panel/server/internal/module/subscription/entity/subscribe"
@@ -54,7 +53,7 @@ func (l *GetSubscribeListLogic) GetSubscribeList(req *dto.GetSubscribeListReques
 			}
 		}
 		sub.Nodes = dto.StringInt64Slice(tool.StringToInt64Slice(item.Nodes))
-		sub.NodeTags = strings.Split(item.NodeTags, ",")
+		sub.NodeTags = splitNodeTags(item.NodeTags)
 		resultList = append(resultList, sub)
 	}
 

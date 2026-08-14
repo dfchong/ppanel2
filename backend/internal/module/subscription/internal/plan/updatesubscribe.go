@@ -42,9 +42,12 @@ func (l *UpdateSubscribeLogic) UpdateSubscribe(req *dto.UpdateSubscribeRequest) 
 		val, _ := json.Marshal(req.Discount)
 		discount = string(val)
 	}
-	// When NodeTags is set, clear Nodes to avoid AND-combined query returning wrong results (#94)
+	// When NodeTags is set, clear Nodes to avoid AND-combined query returning wrong results (#94).
+	// Only non-empty tags count: an empty-string-only payload (e.g. [""] produced
+	// from an empty DB value) must not wipe a plain node selection.
+	cleanTags := cleanNodeTags(req.NodeTags)
 	nodes := tool.Int64SliceToString(req.Nodes.Int64s())
-	if len(req.NodeTags) > 0 {
+	if len(cleanTags) > 0 {
 		nodes = ""
 	}
 	sub := &subscribe.Subscribe{
@@ -62,7 +65,7 @@ func (l *UpdateSubscribeLogic) UpdateSubscribe(req *dto.UpdateSubscribeRequest) 
 		DeviceLimit:       req.DeviceLimit,
 		Quota:             req.Quota,
 		Nodes:             nodes,
-		NodeTags:          tool.StringSliceToString(req.NodeTags),
+		NodeTags:          tool.StringSliceToString(cleanTags),
 		Show:              req.Show,
 		Sell:              req.Sell,
 		Sort:              req.Sort,

@@ -125,10 +125,10 @@ export default function SubscribeForm<T extends Record<string, any>>({
   });
 
   const normalizeInitialValues = () => {
-    const values = shake(
-      initialValues,
-      (value) => value === null
-    ) as Record<string, any>;
+    const values = shake(initialValues, (value) => value === null) as Record<
+      string,
+      any
+    >;
     // Backend serializes `nodes` as string[] (StringInt64Slice) even though the
     // API type declares number[]; normalize to number[] so the checkbox
     // comparison below (item.id is a number) matches saved nodes.
@@ -934,19 +934,26 @@ export default function SubscribeForm<T extends Record<string, any>>({
                                       <div className="flex items-center gap-2">
                                         <Checkbox
                                           checked={value.includes(tagId as any)}
-                                          onCheckedChange={(checked) =>
-                                            checked
-                                              ? form.setValue(field.name, [
-                                                  ...value,
-                                                  tagId,
-                                                ] as any)
-                                              : form.setValue(
-                                                  field.name,
-                                                  value.filter(
-                                                    (v: any) => v !== tagId
-                                                  )
+                                          onCheckedChange={(checked) => {
+                                            // node_tags and nodes are mutually
+                                            // exclusive on the backend (#94):
+                                            // grouping by tags clears the
+                                            // explicit node selection.
+                                            form.setValue("nodes", []);
+                                            if (checked) {
+                                              form.setValue(field.name, [
+                                                ...value,
+                                                tagId,
+                                              ] as any);
+                                            } else {
+                                              form.setValue(
+                                                field.name,
+                                                value.filter(
+                                                  (v: any) => v !== tagId
                                                 )
-                                          }
+                                              );
+                                            }
+                                          }}
                                         />
                                         <Label>
                                           {tag}
@@ -1006,20 +1013,27 @@ export default function SubscribeForm<T extends Record<string, any>>({
                                       checked={value
                                         .map(Number)
                                         .includes(item.id!)}
-                                      onCheckedChange={(checked) =>
-                                        checked
-                                          ? form.setValue(field.name, [
-                                              ...value.map(Number),
-                                              item.id,
-                                            ])
-                                          : form.setValue(
-                                              field.name,
-                                              value.filter(
-                                                (value: number) =>
-                                                  Number(value) !== item.id
-                                              )
+                                      onCheckedChange={(checked) => {
+                                        // node_tags and nodes are mutually
+                                        // exclusive on the backend (#94):
+                                        // selecting explicit nodes clears the
+                                        // tag groups.
+                                        form.setValue("node_tags", []);
+                                        if (checked) {
+                                          form.setValue(field.name, [
+                                            ...value.map(Number),
+                                            item.id,
+                                          ]);
+                                        } else {
+                                          form.setValue(
+                                            field.name,
+                                            value.filter(
+                                              (value: number) =>
+                                                Number(value) !== item.id
                                             )
-                                      }
+                                          );
+                                        }
+                                      }}
                                     />
                                     <Label className="flex w-full items-center justify-between gap-3">
                                       <span className="flex-1">
