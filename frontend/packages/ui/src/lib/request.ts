@@ -5,7 +5,7 @@ import axios, { type InternalAxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
 function handleError(response: {
-  data?: { code?: number; message?: string };
+  data?: { code?: number; message?: string; msg?: string };
   config?: { skipErrorHandler?: boolean };
   message?: string;
 }) {
@@ -103,6 +103,10 @@ function handleError(response: {
       "components:error.401",
       "Request is too frequent, please try again later."
     ),
+    409: t(
+      "components:error.409",
+      "This payment method has pending orders and cannot be deleted. Please process or close those orders first."
+    ),
     500: t(
       "components:error.500",
       "The server is having some issues, please try again later."
@@ -164,6 +168,7 @@ function handleError(response: {
   const message =
     response.data?.message ||
     (code ? ERROR_MESSAGES[code] : undefined) ||
+    response.data?.msg ||
     t(
       "components:error.unknown",
       "An error occurred in the system, please try again later."

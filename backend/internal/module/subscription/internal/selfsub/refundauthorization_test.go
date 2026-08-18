@@ -3,17 +3,33 @@ package selfsub
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/perfect-panel/server/internal/model/dto"
+	orderEntity "github.com/perfect-panel/server/internal/module/billing/entity/order"
 	usermodel "github.com/perfect-panel/server/internal/module/identity/entity/user"
+	"github.com/perfect-panel/server/internal/module/subscription/entity/subscribe"
 	"github.com/perfect-panel/server/internal/module/subscription/entity/usersub"
 	"github.com/perfect-panel/server/internal/repository"
 	"github.com/perfect-panel/server/pkg/constant"
 	"github.com/perfect-panel/server/pkg/logger/logtest"
 	"github.com/perfect-panel/server/pkg/xerr"
 )
+
+// fakeOrdersRepo implements just the order lookup used by
+// CalculateRemainingAmount; every other OrderRepo method is a fail-fast panic
+// via the nil embedded interface.
+type fakeOrdersRepo struct {
+	repository.OrderRepo
+	details *orderEntity.Details
+	err     error
+}
+
+func (r *fakeOrdersRepo) FindOneDetails(_ context.Context, _ int64) (*orderEntity.Details, error) {
+	return r.details, r.err
+}
 
 // fakeUserRepo embeds repository.UserRepo (nil) so any unexpected
 // method call panics immediately (fail-fast).
@@ -168,6 +184,81 @@ func TestPreUnsubscribe_OwnerBypassesAuthGate(t *testing.T) {
 	}
 	if u.findOneUserSubscribeCalls != 1 {
 		t.Fatalf("FindOneUserSubscribe called %d time(s), want 1", u.findOneUserSubscribeCalls)
+	}
+}
+
+func TestPreUnsubscribe_NonCancelableStatus_ReturnsBusinessCode(t *testing.T) {
+	logtest.Discard(t)
+
+	ctx := context.WithValue(context.Background(), constant.CtxKeyUser, &usermodel.User{Id: 100})
+	const subID int64 = 100
+
+	allowDeduction := true
+	u := &fakeUserRepo{
+		findOneSubscribeFn: func(_ context.Context, id int64) (*usersub.Subscribe, error) {
+			return &usersub.Subscribe{Id: subID, UserId: 100, Status: usersub.SubscribeStatusExpired}, nil
+		},
+		findOneUserSubscribeFn: func(_ context.Context, id int64) (*usersub.SubscribeDetails, error) {
+			return &usersub.SubscribeDetails{
+				OrderId:     1,
+				SubscribeId: 2,
+				Status:      usersub.SubscribeStatusExpired,
+				Subscribe:   &subscribe.Subscribe{AllowDeduction: &allowDeduction},
+			}, nil
+		},
+	}
+
+	logic := newPreUnsubscribeLogic(ctx, newFakeDeps(u))
+	resp, err := logic.PreUnsubscribe(&dto.PreUnsubscribeRequest{Id: subID})
+
+	// An expired subscription cannot be settled here, but it is a business
+	// rejection (60002) rather than an opaque server error (500).
+	if code := errCode(t, err); code != xerr.SubscribeNotAvailable {
+		t.Fatalf("code = %d, want %d (SubscribeNotAvailable)", code, xerr.SubscribeNotAvailable)
+	}
+	if resp != nil {
+		t.Fatalf("resp = %+v, want nil", resp)
+	}
+}
+
+func TestCalculateRemainingAmount_UnlimitedTraffic_NoError(t *testing.T) {
+	logtest.Discard(t)
+
+	ctx := context.WithValue(context.Background(), constant.CtxKeyUser, &usermodel.User{Id: 100})
+	const subID int64 = 100
+	now := time.Now()
+
+	allowDeduction := true
+	u := &fakeUserRepo{
+		findOneSubscribeFn: func(_ context.Context, id int64) (*usersub.Subscribe, error) {
+			return &usersub.Subscribe{Id: subID, UserId: 100, Status: usersub.SubscribeStatusActive}, nil
+		},
+		findOneUserSubscribeFn: func(_ context.Context, id int64) (*usersub.SubscribeDetails, error) {
+			return &usersub.SubscribeDetails{
+				OrderId:     1,
+				SubscribeId: 2,
+				Status:      usersub.SubscribeStatusActive,
+				StartTime:   now.Add(-24 * time.Hour),
+				ExpireTime:  now.Add(24 * time.Hour),
+				// Traffic == 0 means unlimited traffic; usage must not trip
+				// the used-vs-quota validation.
+				Traffic:   0,
+				Download:  2048,
+				Upload:    4096,
+				Subscribe: &subscribe.Subscribe{AllowDeduction: &allowDeduction, UnitTime: "Month"},
+			}, nil
+		},
+	}
+
+	deps := newFakeDeps(u)
+	deps.Orders = &fakeOrdersRepo{details: &orderEntity.Details{Quantity: 1, Amount: 1000}}
+
+	remaining, err := CalculateRemainingAmount(ctx, deps, subID)
+	if err != nil {
+		t.Fatalf("CalculateRemainingAmount() error = %v, want nil", err)
+	}
+	if remaining < 0 {
+		t.Fatalf("CalculateRemainingAmount() = %d, want >= 0", remaining)
 	}
 }
 

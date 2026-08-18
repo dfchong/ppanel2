@@ -67,11 +67,16 @@ func (s *Subscribe) Validate() error {
 		return ErrInvalidTraffic
 	}
 
-	if s.Download+s.Upload > s.Traffic {
+	// Traffic == 0 means unlimited traffic (see the subscription module's
+	// isTrafficExhausted), so the used-vs-quota check only applies to a
+	// finite quota.
+	if s.Traffic > 0 && s.Download+s.Upload > s.Traffic {
 		return fmt.Errorf("download + upload (%d) cannot exceed total traffic (%d)", s.Download+s.Upload, s.Traffic)
 	}
 
-	if !s.ExpireTime.After(s.StartTime) {
+	// NoLimit subscriptions use the Unix epoch as their expiry sentinel
+	// (see tool.AddTime), so the start/expire ordering check does not apply.
+	if s.UnitTime != UnitTimeNoLimit && !s.ExpireTime.After(s.StartTime) {
 		return ErrInvalidTimeRange
 	}
 

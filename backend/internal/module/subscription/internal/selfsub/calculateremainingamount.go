@@ -3,7 +3,9 @@ package selfsub
 import (
 	"context"
 
+	"github.com/perfect-panel/server/internal/module/subscription/entity/usersub"
 	"github.com/perfect-panel/server/pkg/logger"
+	"github.com/perfect-panel/server/pkg/tool"
 
 	"github.com/perfect-panel/server/pkg/deduction"
 	"github.com/perfect-panel/server/pkg/xerr"
@@ -20,12 +22,22 @@ func CalculateRemainingAmount(ctx context.Context, deps Deps, userSubscribeId in
 	if userSubscribe.OrderId == 0 {
 		return 0, nil
 	}
-	if !*userSubscribe.Subscribe.AllowDeduction && !deps.SingleModel() {
-		return 0, errors.New("The subscription package does not support deductions")
+	if userSubscribe.Subscribe == nil {
+		return 0, errors.Wrapf(xerr.NewErrCode(xerr.SubscribeNotAvailable), "subscribe plan not found, id: %d", userSubscribe.SubscribeId)
+	}
+	// AllowDeduction is a nullable column defaulting to true; treat NULL as
+	// allowed so a legacy plan row cannot panic the preview/cancellation.
+	allowDeduction := userSubscribe.Subscribe.AllowDeduction == nil || *userSubscribe.Subscribe.AllowDeduction
+	if !allowDeduction && !deps.SingleModel() {
+		return 0, errors.Wrapf(xerr.NewErrCode(xerr.SubscribeNotAvailable), "The subscription package does not support deductions")
 	}
 
-	if userSubscribe.Status != 1 {
-		return 0, errors.New("The subscription package is not in use")
+	// Only the statuses Unsubscribe accepts may be settled here, so the
+	// preview and the cancellation stay consistent. Anything else is a
+	// business rejection, not a server error.
+	cancelable := []uint8{usersub.SubscribeStatusPending, usersub.SubscribeStatusActive, usersub.SubscribeStatusFinished}
+	if !tool.Contains(cancelable, userSubscribe.Status) {
+		return 0, errors.Wrapf(xerr.NewErrCode(xerr.SubscribeNotAvailable), "The subscription package is not in use")
 	}
 	// Find Order Details
 	orderDetails, err := deps.Orders.FindOneDetails(ctx, userSubscribe.OrderId)

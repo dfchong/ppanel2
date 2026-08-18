@@ -16,6 +16,7 @@
   "error": {
     "400": "The request parameters are incorrect, please check and resubmit.",
     "401": "Request is too frequent, please try again later.",
+    "409": "This payment method has pending orders and cannot be deleted. Please process or close those orders first.",
     "500": "The server is having some issues, please try again later.",
     "10001": "Query was not successful, please try again later or check your conditions.",
     "10002": "Update operation was not successful, please try again later.",

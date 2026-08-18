@@ -66,11 +66,16 @@ export default function PaymentTable() {
             )}
             key="delete"
             onConfirm={async () => {
-              await deletePaymentMethod({
-                id: row.id,
-              });
-              toast.success(t("deleteSuccess", "Deleted successfully"));
-              ref.current?.refresh();
+              try {
+                await deletePaymentMethod({
+                  id: row.id,
+                });
+                toast.success(t("deleteSuccess", "Deleted successfully"));
+                ref.current?.refresh();
+              } catch {
+                // The request interceptor already surfaced the backend error
+                // message; swallow here to avoid an unhandled rejection.
+              }
             }}
             title={t("confirmDelete", "Confirm Delete")}
             trigger={
@@ -112,11 +117,16 @@ export default function PaymentTable() {
               )}
               key="delete"
               onConfirm={async () => {
-                for (const row of rows) {
-                  await deletePaymentMethod({ id: row.id });
+                try {
+                  for (const row of rows) {
+                    await deletePaymentMethod({ id: row.id });
+                  }
+                  toast.success(t("deleteSuccess", "Deleted successfully"));
+                  ref.current?.refresh();
+                } catch {
+                  // The request interceptor already surfaced the backend error
+                  // message; swallow here to avoid an unhandled rejection.
                 }
-                toast.success(t("deleteSuccess", "Deleted successfully"));
-                ref.current?.refresh();
               }}
               title={t("confirmDelete", "Confirm Delete")}
               trigger={

@@ -1,6 +1,6 @@
 # ============================================================================
 # ppanel-server 后端 Deployment + Service（namespace: ppanel2）
-#   - 镜像：dfchong/ppanel2:0.3（公开于 Docker Hub，见 deploy/backend/build.sh）
+#   - 镜像：dfchong/ppanel2:0.4（公开于 Docker Hub，见 deploy/backend/build.sh）
 #   - 配置：挂载 Secret ppanel-secret 的 ppanel.yaml 到 /app/etc/ppanel.yaml
 #   - mmdb 已内置镜像；启动 panic 三条件：数据库 / mmdb / Redis(Valkey)
 #   - 健康检查：后端 API 一律返回 HTTP 200 结构体，probe 判断 200 即可
@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: ppanel-server
-          image: dfchong/ppanel2:0.3
+          image: dfchong/ppanel2:0.4
           imagePullPolicy: IfNotPresent
           args: ["run", "--config", "etc/ppanel.yaml"]
           ports:

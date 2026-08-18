@@ -350,11 +350,16 @@ export default function Content() {
                       {item.expire_time !== 0 && item.subscribe.sell && (
                         <Renewal id={item.id} subscribe={item.subscribe} />
                       )}
-                      <Unsubscribe
-                        allowDeduction={item.subscribe.allow_deduction}
-                        id={item.id}
-                        onSuccess={refetch}
-                      />
+                      {/* Only Pending/Active/Finished subscriptions are
+                          cancelable server-side (see UnsubscribeLogic's
+                          cancelable set); hide the button otherwise. */}
+                      {[0, 1, 2].includes(item.status) && (
+                        <Unsubscribe
+                          allowDeduction={item.subscribe.allow_deduction}
+                          id={item.id}
+                          onSuccess={refetch}
+                        />
+                      )}
                     </div>
                   )}
                 </CardHeader>

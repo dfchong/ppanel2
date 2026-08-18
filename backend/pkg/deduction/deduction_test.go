@@ -139,6 +139,38 @@ func TestSubscribe_Validate(t *testing.T) {
 	}
 }
 
+func TestSubscribe_Validate_UnlimitedTrafficWithUsage(t *testing.T) {
+	// Traffic == 0 means unlimited traffic; already-used traffic must not
+	// trip the used-vs-quota check.
+	sub := Subscribe{
+		StartTime:  time.Now(),
+		ExpireTime: time.Now().Add(24 * time.Hour),
+		Traffic:    0, // unlimited
+		Download:   1024,
+		Upload:     2048,
+		UnitTime:   UnitTimeNoLimit,
+	}
+	if err := sub.Validate(); err != nil {
+		t.Fatalf("unlimited-traffic subscription with usage: Validate() error = %v", err)
+	}
+}
+
+func TestSubscribe_Validate_NoLimitEpochExpiry(t *testing.T) {
+	// NoLimit subscriptions use the Unix epoch as their expiry sentinel
+	// (see tool.AddTime), which is before StartTime by construction.
+	sub := Subscribe{
+		StartTime:  time.Now(),
+		ExpireTime: time.UnixMilli(0), // NoLimit sentinel
+		Traffic:    1000,
+		Download:   100,
+		Upload:     200,
+		UnitTime:   UnitTimeNoLimit,
+	}
+	if err := sub.Validate(); err != nil {
+		t.Fatalf("NoLimit subscription with epoch expiry: Validate() error = %v", err)
+	}
+}
+
 func TestOrder_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -530,6 +562,42 @@ func TestCalculateRemainingAmount(t *testing.T) {
 			sub: Subscribe{
 				StartTime:      now.Add(-24 * time.Hour),
 				ExpireTime:     now.Add(24 * time.Hour),
+				Traffic:        1000,
+				Download:       300,
+				Upload:         200,
+				UnitTime:       UnitTimeNoLimit,
+				ResetCycle:     ResetCycleNone,
+				DeductionRatio: 0,
+			},
+			order: Order{
+				Amount:   1000,
+				Quantity: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "unlimited traffic with usage, finite term",
+			sub: Subscribe{
+				StartTime:      now.Add(-24 * time.Hour),
+				ExpireTime:     now.Add(24 * time.Hour),
+				Traffic:        0, // unlimited
+				Download:       300,
+				Upload:         200,
+				UnitTime:       UnitTimeMonth,
+				ResetCycle:     ResetCycleNone,
+				DeductionRatio: 0,
+			},
+			order: Order{
+				Amount:   1000,
+				Quantity: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "no limit term with epoch expiry",
+			sub: Subscribe{
+				StartTime:      now.Add(-24 * time.Hour),
+				ExpireTime:     time.UnixMilli(0), // NoLimit sentinel
 				Traffic:        1000,
 				Download:       300,
 				Upload:         200,
