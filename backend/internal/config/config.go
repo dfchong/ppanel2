@@ -44,6 +44,11 @@ type RedisConfig struct {
 	Host string `yaml:"Host" default:"localhost:6379"`
 	Pass string `yaml:"Pass" default:""`
 	DB   int    `yaml:"DB" default:"0"`
+	// AsynqDB is the Redis logical database the asynq queue and scheduler
+	// use. It stays independent of DB so the async job store can be isolated
+	// from the application cache; the default preserves the historical
+	// hardcoded value of 5.
+	AsynqDB int `yaml:"AsynqDB" default:"5"`
 }
 
 type TransportConfig struct {
@@ -356,7 +361,10 @@ type NodeDBConfig struct {
 }
 
 type Currency struct {
-	Unit      string `yaml:"Unit" default:"CNY"`
-	Symbol    string `yaml:"Symbol" default:"USD"`
+	Unit string `yaml:"Unit" default:"CNY"`
+	// Symbol is the display symbol for the configured currency unit; it must
+	// be a symbol (e.g. "¥"/"$"), not a currency code. The default matches the
+	// default Unit above.
+	Symbol    string `yaml:"Symbol" default:"¥"`
 	AccessKey string `yaml:"AccessKey" default:""`
 }

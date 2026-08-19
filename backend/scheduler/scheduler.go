@@ -117,7 +117,7 @@ func initService(svc *svc.ServiceContext) *asynq.Scheduler {
 		location = time.Local
 	}
 	return asynq.NewScheduler(
-		asynq.RedisClientOpt{Addr: svc.Config.Redis.Host, Password: svc.Config.Redis.Pass, DB: 5},
+		asynq.RedisClientOpt{Addr: svc.Config.Redis.Host, Password: svc.Config.Redis.Pass, DB: svc.Config.Redis.AsynqDB},
 		&asynq.SchedulerOpts{
 			Location: location,
 		},

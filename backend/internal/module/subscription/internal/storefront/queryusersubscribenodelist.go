@@ -48,8 +48,14 @@ func (l *QueryUserSubscribeNodeListLogic) QueryUserSubscribeNodeList() (resp *dt
 	for _, us := range userSubscribes {
 		userSubscribe, err := l.getUserSubscribe(us.Token)
 		if err != nil {
-			l.Errorw("[SubscribeLogic] Get user subscribe failed", logger.Field("error", err.Error()), logger.Field("token", userSubscribe.Token))
+			// getUserSubscribe returns (nil, err) on failure; log the token from
+			// the loop variable instead of dereferencing the nil result.
+			l.Errorw("[SubscribeLogic] Get user subscribe failed", logger.Field("error", err.Error()), logger.Field("token", us.Token))
 			return nil, err
+		}
+		if userSubscribe == nil {
+			l.Errorw("[SubscribeLogic] Get user subscribe returned nil", logger.Field("token", us.Token))
+			return nil, errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find subscribe error")
 		}
 		nodes, err := l.getServers(userSubscribe)
 		if err != nil {

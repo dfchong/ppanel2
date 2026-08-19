@@ -86,12 +86,9 @@ func (l *UserRegisterLogic) UserRegister(req *dto.UserRegisterRequest) (resp *dt
 	if err := l.deps.Policy.TakeIPPermit(l.ctx, req.IP); err != nil {
 		return nil, err
 	}
-	if l.deps.Config.EmailVerifyEnabled {
-		cacheKey := fmt.Sprintf("%s:%s:%s", config.AuthCodeCacheKey, constant.Register, canonicalEmail)
-		if err := verification.ValidateVerificationCode(l.ctx, l.deps.Redis, cacheKey, req.Code, true); err != nil {
-			return nil, errors.Wrapf(xerr.NewErrCode(xerr.VerifyCodeError), "code error")
-		}
-	}
+	// The verification code is consumed inside the registration transaction
+	// (after the account write), not here, so a rejected registration does not
+	// waste it and the check cannot diverge from the consuming call.
 
 	// Generate password
 	pwd := tool.EncodePassWord(req.Password)
@@ -107,6 +104,16 @@ func (l *UserRegisterLogic) UserRegister(req *dto.UserRegisterRequest) (resp *dt
 		// Save user information
 		if err := store.User().Insert(l.ctx, userInfo); err != nil {
 			return err
+		}
+		// Consume the verification code atomically right before the account
+		// write commits. A failure before this point (existing user, IP limit,
+		// insert error) leaves the code unconsumed; a failure after it rolls
+		// the account back and the user simply requests a fresh code.
+		if l.deps.Config.EmailVerifyEnabled {
+			cacheKey := fmt.Sprintf("%s:%s:%s", config.AuthCodeCacheKey, constant.Register, canonicalEmail)
+			if err := verification.ValidateVerificationCode(l.ctx, l.deps.Redis, cacheKey, req.Code, true); err != nil {
+				return errors.Wrapf(xerr.NewErrCode(xerr.VerifyCodeError), "code error")
+			}
 		}
 		// Generate ReferCode
 		userInfo.ReferCode = uuidx.UserInviteCode(userInfo.Id)

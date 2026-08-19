@@ -7,7 +7,7 @@ import (
 )
 
 func redisOpt(c config.Config) asynq.RedisClientOpt {
-	return asynq.RedisClientOpt{Addr: c.Redis.Host, Password: c.Redis.Pass, DB: 5}
+	return asynq.RedisClientOpt{Addr: c.Redis.Host, Password: c.Redis.Pass, DB: c.Redis.AsynqDB}
 }
 
 // NewAsynqClient returns the tracing asynq client: EnqueueContext stamps the

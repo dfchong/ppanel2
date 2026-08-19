@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: ppanel-server
-          image: dfchong/ppanel2:0.5
+          image: dfchong/ppanel2:0.6
           imagePullPolicy: IfNotPresent
           args: ["run", "--config", "etc/ppanel.yaml"]
           ports:

@@ -43,7 +43,7 @@ func (m *Service) Stop() {
 
 func initService(svc *svc.ServiceContext) *asynq.Server {
 	return asynq.NewServer(
-		asynq.RedisClientOpt{Addr: svc.Config.Redis.Host, Password: svc.Config.Redis.Pass, DB: 5},
+		asynq.RedisClientOpt{Addr: svc.Config.Redis.Host, Password: svc.Config.Redis.Pass, DB: svc.Config.Redis.AsynqDB},
 		asynq.Config{
 			IsFailure: func(err error) bool {
 				logger.Error("consumer service error", logger.Field("error", err.Error()))

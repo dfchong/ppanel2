@@ -96,7 +96,11 @@ func (s *Service) Purchase(ctx context.Context, req *dto.PurchaseOrderRequest) (
 	}
 
 	// check subscribe plan inventory
-	if sub.Inventory == 0 {
+	// Inventory == -1 means unlimited stock; any other value <= 0 means out of
+	// stock. This mirrors ReserveInventory in the subscription repo so a plan
+	// misconfigured to a negative value below -1 cannot pass the early check
+	// and then fail reservation after the order was created.
+	if sub.Inventory != -1 && sub.Inventory <= 0 {
 		return nil, errors.Wrapf(xerr.NewErrCode(xerr.SubscribeOutOfStock), "subscribe out of stock")
 	}
 

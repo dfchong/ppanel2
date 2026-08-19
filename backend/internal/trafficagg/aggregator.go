@@ -90,12 +90,9 @@ func (a *Aggregator) AddReportAt(ctx context.Context, serverInfo *node.Server, p
 		return errors.New("server not found")
 	}
 
-	pipe := a.deps.Redis.Pipeline()
-	pipe.HSet(ctx, serverLastReportedKey, strconv.FormatInt(serverInfo.Id, 10), strconv.FormatInt(now.UnixMilli(), 10))
-
 	if len(logs) == 0 {
-		_, err := pipe.Exec(ctx)
-		return err
+		// Empty report: still mark the server as having reported (heartbeat).
+		return a.deps.Redis.HSet(ctx, serverLastReportedKey, strconv.FormatInt(serverInfo.Id, 10), strconv.FormatInt(now.UnixMilli(), 10)).Err()
 	}
 
 	ratio, ok, err := protocolRatio(serverInfo, protocol)
@@ -105,17 +102,23 @@ func (a *Aggregator) AddReportAt(ctx context.Context, serverInfo *node.Server, p
 			logger.Field("protocol", protocol),
 			logger.Field("error", err.Error()),
 		)
-		_, execErr := pipe.Exec(ctx)
-		return execErr
+		return fmt.Errorf("unmarshal protocols for server %d failed: %w", serverInfo.Id, err)
 	}
 	if !ok {
+		// A node reporting a protocol that is not in its own protocol list is a
+		// configuration error. Do NOT record last_reported here: silently
+		// dropping the traffic while still marking the server as reported would
+		// hide the misconfiguration from operators. The node keeps retrying and
+		// the failure surfaces at the push endpoint.
 		logger.WithContext(ctx).Error("[TrafficAggregator] Protocol not found",
 			logger.Field("server_id", serverInfo.Id),
 			logger.Field("protocol", protocol),
 		)
-		_, execErr := pipe.Exec(ctx)
-		return execErr
+		return fmt.Errorf("protocol %q not found in server %d configuration", protocol, serverInfo.Id)
 	}
+
+	pipe := a.deps.Redis.Pipeline()
+	pipe.HSet(ctx, serverLastReportedKey, strconv.FormatInt(serverInfo.Id, 10), strconv.FormatInt(now.UnixMilli(), 10))
 
 	minute := now.In(timeutil.Location()).Truncate(time.Minute)
 	suffix := minute.Format(bucketLayout)
