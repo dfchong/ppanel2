@@ -48,6 +48,7 @@ import {
   isExpiredSubscription,
 } from "@/utils/subscription";
 import Subscribe from "../../subscribe";
+import ChangeSubscription from "../../subscribe/change-subscription";
 import Renewal from "../../subscribe/renewal";
 import ResetTraffic from "../../subscribe/reset-traffic";
 import Unsubscribe from "../../subscribe/unsubscribe";
@@ -349,6 +350,9 @@ export default function Content() {
                       )}
                       {item.expire_time !== 0 && item.subscribe.sell && (
                         <Renewal id={item.id} subscribe={item.subscribe} />
+                      )}
+                      {item.subscribe.sell && (
+                        <ChangeSubscription subscribe={item.subscribe} />
                       )}
                       {/* Only Pending/Active/Finished subscriptions are
                           cancelable server-side (see UnsubscribeLogic's

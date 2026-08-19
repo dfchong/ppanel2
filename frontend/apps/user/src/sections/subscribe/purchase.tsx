@@ -25,11 +25,13 @@ import { SubscribeDetail } from "./detail";
 interface PurchaseProps {
   subscribe?: API.Subscribe;
   setSubscribe: (subscribe?: API.Subscribe) => void;
+  title?: string;
 }
 
 export default function Purchase({
   subscribe,
   setSubscribe,
+  title,
 }: Readonly<PurchaseProps>) {
   const { t } = useTranslation("subscribe");
   const { getUserInfo } = useGlobalStore();
@@ -120,7 +122,9 @@ export default function Purchase({
     >
       <DialogContent className="flex h-full flex-col overflow-hidden border-none p-0 md:h-auto md:max-w-screen-lg">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>{t("buySubscription", "Buy Subscription")}</DialogTitle>
+          <DialogTitle>
+            {title || t("buySubscription", "Buy Subscription")}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid w-full flex-grow gap-3 overflow-auto p-6 pt-0 lg:grid-cols-2">
           <Card className="border-transparent shadow-none md:border-inherit md:shadow">

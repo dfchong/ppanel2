@@ -14,6 +14,9 @@
   "buy": "购买",
   "buyNow": "立即购买",
   "buySubscription": "购买订阅",
+  "changeSubscription": "变更订阅",
+  "changeSubscriptionEmpty": "暂无可变更的订阅套餐",
+  "changeSubscriptionTitle": "变更订阅",
   "coupon": "优惠券",
   "Day": "天",
   "detail": {

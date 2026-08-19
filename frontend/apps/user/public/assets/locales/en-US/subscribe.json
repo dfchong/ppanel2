@@ -14,6 +14,9 @@
   "buy": "Buy",
   "buyNow": "Buy Now",
   "buySubscription": "Buy Subscription",
+  "changeSubscription": "Change Subscription",
+  "changeSubscriptionEmpty": "No other subscription available",
+  "changeSubscriptionTitle": "Change Subscription",
   "coupon": "Coupon",
   "Day": "Day",
   "detail": {
