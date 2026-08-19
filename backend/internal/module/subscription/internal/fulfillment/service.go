@@ -214,7 +214,11 @@ func (s *Service) activateNewPurchaseTx(ctx context.Context, store repository.Su
 }
 
 func (s *Service) createUserSubscriptionTx(ctx context.Context, store repository.SubscriptionStore, orderInfo *order.Order, sub *subscribe.Subscribe) (*usersub.Subscribe, error) {
-	if s.deps.SingleModel() {
+	// A change order carries the previous subscription's token, so it is
+	// allowed to replace a blocking subscription in single-model mode; plain
+	// purchases still hit the gate.
+	isChange := orderInfo.SubscribeToken != ""
+	if s.deps.SingleModel() && !isChange {
 		hasBlockingSubscription, err := store.UserSubscription().HasBlockingSubscription(ctx, orderInfo.UserId)
 		if err != nil {
 			return nil, err
@@ -243,6 +247,26 @@ func (s *Service) createUserSubscriptionTx(ctx context.Context, store repository
 		Token:       uuidx.SubscribeToken(orderInfo.OrderNo),
 		UUID:        uuid.New().String(),
 		Status:      1,
+	}
+	// Change subscription: stop the old subscription and carry its unused
+	// traffic over into the new quota. Both rows are written in the same
+	// subscription-domain transaction, so a rollback reverts both.
+	if isChange {
+		oldSub, err := store.UserSubscription().FindOneSubscribeByTokenForUpdate(ctx, orderInfo.SubscribeToken)
+		if err != nil {
+			return nil, err
+		}
+		if oldSub.UserId != orderInfo.UserId {
+			return nil, fmt.Errorf("change subscription ownership mismatch")
+		}
+		if oldSub.Traffic > 0 {
+			userSub.Traffic += oldSub.Traffic - oldSub.Download - oldSub.Upload
+		}
+		oldSub.Status = usersub.SubscribeStatusStopped
+		oldSub.FinishedAt = nil
+		if err := store.UserSubscription().UpdateSubscribe(ctx, oldSub); err != nil {
+			return nil, err
+		}
 	}
 	if err := store.UserSubscription().InsertSubscribe(ctx, userSub); err != nil {
 		return nil, err
@@ -273,19 +297,16 @@ func (s *Service) updateSubscriptionForRenewalTx(ctx context.Context, store repo
 	if userSub.ExpireTime.Before(now) {
 		userSub.ExpireTime = now
 	}
-	today := now.Day()
-	resetDay := userSub.ExpireTime.Day()
-	if (sub.RenewalReset != nil && *sub.RenewalReset) || today == resetDay {
-		userSub.Download = 0
-		userSub.Upload = 0
+	// Renewal carries the unused traffic over into the next cycle: the used
+	// bytes are cleared and the remaining allowance is added to the quota
+	// (Traffic == 0 means unlimited, so there is nothing to carry). This
+	// replaces the previous conditional reset (RenewalReset / reset-day).
+	if userSub.Traffic > 0 {
+		userSub.Traffic += userSub.Traffic - userSub.Download - userSub.Upload
 	}
-	if userSub.FinishedAt != nil {
-		if userSub.FinishedAt.Before(now) && today > resetDay {
-			userSub.Download = 0
-			userSub.Upload = 0
-		}
-		userSub.FinishedAt = nil
-	}
+	userSub.Download = 0
+	userSub.Upload = 0
+	userSub.FinishedAt = nil
 	userSub.ExpireTime = tool.AddTime(sub.UnitTime, orderInfo.Quantity, userSub.ExpireTime)
 	userSub.Status = 1
 	return store.UserSubscription().UpdateSubscribe(ctx, userSub)
@@ -298,6 +319,11 @@ func (s *Service) activateResetTrafficTx(ctx context.Context, store repository.S
 	}
 	if userSub.UserId != orderInfo.UserId {
 		return nil, fmt.Errorf("reset subscription ownership mismatch")
+	}
+	// A paid reset clears the used traffic but carries the remaining
+	// allowance over (Traffic == 0 means unlimited, so nothing to carry).
+	if userSub.Traffic > 0 {
+		userSub.Traffic += userSub.Traffic - userSub.Download - userSub.Upload
 	}
 	userSub.Download = 0
 	userSub.Upload = 0

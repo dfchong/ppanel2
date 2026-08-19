@@ -144,6 +144,9 @@ func TestUnsubscribe_AdminCreatedSubscription_SkipsRefund(t *testing.T) {
 		UserId:      userID,
 		OrderId:     0,
 		SubscribeId: planID,
+		Traffic:     1000,
+		Download:    100,
+		Upload:      50,
 		Status:      1,
 	}
 	userRepo := &adminCreatedSubscriptionUserRepo{subscribe: userSubscribe}
@@ -170,6 +173,9 @@ func TestUnsubscribe_AdminCreatedSubscription_SkipsRefund(t *testing.T) {
 	}
 	if userRepo.subscribe.Status != 4 {
 		t.Fatalf("subscription status = %d, want 4 (cancelled)", userRepo.subscribe.Status)
+	}
+	if userRepo.subscribe.Download != 0 || userRepo.subscribe.Upload != 0 {
+		t.Fatalf("traffic not cleared on unsubscribe: down=%d up=%d", userRepo.subscribe.Download, userRepo.subscribe.Upload)
 	}
 	if store.wallet.calls != 0 {
 		t.Fatalf("wallet touched %d time(s), want 0", store.wallet.calls)

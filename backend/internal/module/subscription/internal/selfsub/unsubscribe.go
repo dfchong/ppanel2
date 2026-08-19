@@ -104,6 +104,12 @@ func (l *UnsubscribeLogic) Unsubscribe(req *dto.UnsubscribeRequest) error {
 				return errors.Wrapf(xerr.NewErrCode(xerr.ERROR), "Subscription status invalid for cancellation")
 			}
 			lockedSub.Status = usersub.SubscribeStatusDeducted
+			// The subscription stops serving; its remaining value has already
+			// been converted into the refund amount above, so the traffic
+			// ledger is cleared here — after CalculateRemainingAmount ran,
+			// so the refund still accounts for the unused traffic.
+			lockedSub.Download = 0
+			lockedSub.Upload = 0
 			if err = store.UserSubscription().UpdateSubscribe(l.ctx, lockedSub); err != nil {
 				return err
 			}

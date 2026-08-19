@@ -55,9 +55,9 @@ func (s *Service) PreCreateOrder(ctx context.Context, req *dto.PurchaseOrderRequ
 		if userSubscribe.UserId != u.Id {
 			return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidAccess), "user subscribe does not belong to current user")
 		}
-		if userSubscribe.SubscribeId != req.SubscribeId {
-			return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidParams), "user subscribe does not match subscribe plan")
-		}
+		// A change-subscription preview may carry an old subscription whose
+		// plan differs from the requested one (the plan-match check used to
+		// reject exactly that). Deducted subscriptions stay rejected.
 		if userSubscribe.Status == usersub.SubscribeStatusDeducted {
 			return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidParams), "user subscribe status does not allow renewal")
 		}

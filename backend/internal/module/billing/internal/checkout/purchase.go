@@ -53,7 +53,27 @@ func (s *Service) Purchase(ctx context.Context, req *dto.PurchaseOrderRequest) (
 		return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidParams), "quantity exceeds maximum limit of %d", MaxQuantity)
 	}
 
-	if s.deps.SingleModel() {
+	// A change-subscription request carries the old subscription id: it may
+	// replace an existing subscription (single-model included), and the old
+	// subscription's unused traffic is carried into the new one at
+	// fulfillment. Plain purchases keep the single-model gate below.
+	var changeToken string
+	if req.UserSubscribeId > 0 {
+		oldSub, err := s.deps.UserSubs.FindOneSubscribe(ctx, req.UserSubscribeId)
+		if err != nil {
+			log.Errorw("[Purchase] Find old subscribe error", logger.Field("error", err.Error()), logger.Field("user_subscribe_id", req.UserSubscribeId))
+			return nil, errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find old subscribe error: %v", err.Error())
+		}
+		if oldSub.UserId != u.Id {
+			return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidAccess), "user subscribe does not belong to current user")
+		}
+		if oldSub.SubscribeId == req.SubscribeId {
+			return nil, errors.Wrapf(xerr.NewErrCode(xerr.InvalidParams), "cannot change to the same subscribe plan")
+		}
+		changeToken = oldSub.Token
+	}
+
+	if s.deps.SingleModel() && req.UserSubscribeId == 0 {
 		hasBlockingSubscription, err := s.deps.UserSubs.HasBlockingSubscription(ctx, u.Id)
 		if err != nil {
 			log.Errorw("[Purchase] Database query error", logger.Field("error", err.Error()), logger.Field("user_id", u.Id))
@@ -194,6 +214,9 @@ func (s *Service) Purchase(ctx context.Context, req *dto.PurchaseOrderRequest) (
 		Status:         1,
 		IsNew:          isNew,
 		SubscribeId:    req.SubscribeId,
+		// A change order carries the old subscription's token so fulfillment
+		// can stop it and carry the unused traffic into the new subscription.
+		SubscribeToken: changeToken,
 	}
 	orderflow.ApplyIdempotency(ctx, orderInfo)
 	err = s.deps.Store.InBillingTx(ctx, func(txStore repository.BillingStore) error {

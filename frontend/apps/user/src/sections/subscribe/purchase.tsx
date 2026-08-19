@@ -26,21 +26,31 @@ interface PurchaseProps {
   subscribe?: API.Subscribe;
   setSubscribe: (subscribe?: API.Subscribe) => void;
   title?: string;
+  // fromUserSubscribeId marks this purchase as a subscription change: the old
+  // subscription is stopped at fulfillment and its unused traffic carries over.
+  fromUserSubscribeId?: number;
 }
 
 export default function Purchase({
   subscribe,
   setSubscribe,
   title,
+  fromUserSubscribeId,
 }: Readonly<PurchaseProps>) {
   const { t } = useTranslation("subscribe");
   const { getUserInfo } = useGlobalStore();
   const router = useRouter();
-  const [params, setParams] = useState<Partial<API.PurchaseOrderRequest>>({
+  // The typed client is generated from the remote swagger and does not yet
+  // carry user_subscribe_id, so extend the request type locally for the
+  // change-subscription flow.
+  const [params, setParams] = useState<
+    Partial<API.PurchaseOrderRequest & { user_subscribe_id?: number }>
+  >({
     quantity: 1,
     subscribe_id: 0,
     payment: -1,
     coupon: "",
+    user_subscribe_id: 0,
   });
   const [loading, startTransition] = useTransition();
   const lastSuccessOrderRef = useRef<any>(null);
@@ -84,9 +94,10 @@ export default function Purchase({
         ...prev,
         quantity: defaultQuantity,
         subscribe_id: subscribe?.id,
+        user_subscribe_id: fromUserSubscribeId ?? 0,
       }));
     }
-  }, [subscribe]);
+  }, [subscribe, fromUserSubscribeId]);
 
   const handleChange = useCallback(
     (field: keyof typeof params, value: string | number) => {
@@ -126,6 +137,14 @@ export default function Purchase({
             {title || t("buySubscription", "Buy Subscription")}
           </DialogTitle>
         </DialogHeader>
+        {fromUserSubscribeId ? (
+          <p className="px-6 pb-2 text-sm text-muted-foreground">
+            {t(
+              "unusedTrafficCarriedOver",
+              "Your unused traffic will be carried over to the new subscription."
+            )}
+          </p>
+        ) : null}
         <div className="grid w-full flex-grow gap-3 overflow-auto p-6 pt-0 lg:grid-cols-2">
           <Card className="border-transparent shadow-none md:border-inherit md:shadow">
             <CardContent className="grid gap-3 text-sm">

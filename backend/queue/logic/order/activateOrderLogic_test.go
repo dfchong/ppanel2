@@ -181,6 +181,7 @@ type activationUserRepo struct {
 	blocking         bool
 	hasBlockingCalls int
 	subscription     *usersub.Subscribe
+	inserted         []*usersub.Subscribe
 }
 
 func (r *activationUserRepo) FindOne(_ context.Context, id int64) (*userEntity.User, error) {
@@ -233,6 +234,12 @@ func (r *activationUserRepo) FindOneSubscribeByTokenForUpdate(ctx context.Contex
 func (r *activationUserRepo) UpdateSubscribe(_ context.Context, data *usersub.Subscribe, _ ...*gorm.DB) error {
 	copy := *data
 	r.subscription = &copy
+	return nil
+}
+
+func (r *activationUserRepo) InsertSubscribe(_ context.Context, data *usersub.Subscribe, _ ...*gorm.DB) error {
+	copy := *data
+	r.inserted = append(r.inserted, &copy)
 	return nil
 }
 
@@ -462,4 +469,121 @@ func (s *activationStore) walletRepo() *activationWalletRepo {
 		s.wallet = &activationWalletRepo{}
 	}
 	return s.wallet
+}
+
+// TestActivateRenewalCarriesUnusedTraffic verifies that renewal clears the used
+// bytes and carries the remaining allowance into the new quota (Traffic =
+// Traffic + remaining), replacing the previous conditional reset.
+func TestActivateRenewalCarriesUnusedTraffic(t *testing.T) {
+	expire := time.Now().Add(24 * time.Hour).Truncate(time.Second)
+	store := &activationStore{
+		orders: &activationOrderRepo{order: &orderEntity.Order{
+			OrderNo: "renewal-carry", UserId: 7, Type: OrderTypeRenewal, Status: OrderStatusPaid,
+			SubscribeId: 9, SubscribeToken: "renewal-token", Quantity: 1,
+		}},
+		users: &activationUserRepo{
+			user: &userEntity.User{Id: 7},
+			subscription: &usersub.Subscribe{
+				Id: 11, UserId: 7, SubscribeId: 9, Token: "renewal-token",
+				ExpireTime: expire, Traffic: 100, Download: 30, Upload: 10, Status: usersub.SubscribeStatusActive,
+			},
+		},
+		subscribes: &activationSubscribeRepo{subscribe: &subscribeEntity.Subscribe{Id: 9, UnitTime: "Month"}},
+		logs:       &activationLogRepo{},
+		inbox:      newActivationInboxRepo(),
+	}
+	svcCtx := newActivationSvc(store, false)
+
+	if _, err := svcCtx.Subscription.FulfillPaidOrder(context.Background(), "renewal-carry"); err != nil {
+		t.Fatalf("activate renewal: %v", err)
+	}
+	sub := store.users.subscription
+	if sub.Download != 0 || sub.Upload != 0 {
+		t.Fatalf("used traffic not cleared: down=%d up=%d", sub.Download, sub.Upload)
+	}
+	// remaining = 100 - 30 - 10 = 60; new quota = 100 + 60 = 160
+	if sub.Traffic != 160 {
+		t.Fatalf("traffic = %d, want 160", sub.Traffic)
+	}
+	if !sub.ExpireTime.After(expire) {
+		t.Fatalf("renewal did not extend expiry")
+	}
+}
+
+// TestActivateResetTrafficCarriesUnusedTraffic verifies that a paid reset clears
+// the used bytes and carries the remaining allowance into the quota, leaving the
+// expiry untouched.
+func TestActivateResetTrafficCarriesUnusedTraffic(t *testing.T) {
+	store := &activationStore{
+		users: &activationUserRepo{
+			user: &userEntity.User{Id: 7},
+			subscription: &usersub.Subscribe{
+				Id: 11, UserId: 7, SubscribeId: 9, Token: "subscription-token",
+				Traffic: 200, Download: 50, Upload: 50, Status: usersub.SubscribeStatusActive,
+			},
+		},
+		orders:     &activationOrderRepo{order: &orderEntity.Order{OrderNo: "reset-carry", UserId: 7, SubscribeToken: "subscription-token", Type: OrderTypeResetTraffic, Status: OrderStatusPaid}},
+		subscribes: &activationSubscribeRepo{subscribe: &subscribeEntity.Subscribe{Id: 9}},
+		logs:       &activationLogRepo{},
+		inbox:      newActivationInboxRepo(),
+	}
+	svcCtx := newActivationSvc(store, false)
+
+	if _, err := svcCtx.Subscription.FulfillPaidOrder(context.Background(), "reset-carry"); err != nil {
+		t.Fatalf("activate reset traffic: %v", err)
+	}
+	sub := store.users.subscription
+	if sub.Download != 0 || sub.Upload != 0 {
+		t.Fatalf("used traffic not cleared: down=%d up=%d", sub.Download, sub.Upload)
+	}
+	// remaining = 200 - 50 - 50 = 100; new quota = 200 + 100 = 300
+	if sub.Traffic != 300 {
+		t.Fatalf("traffic = %d, want 300", sub.Traffic)
+	}
+	if sub.Status != usersub.SubscribeStatusActive {
+		t.Fatalf("status = %d, want active", sub.Status)
+	}
+}
+
+// TestFulfillChangeSubscriptionStopsOldAndCarriesTraffic verifies that a change
+// order (a subscribe order carrying the old subscription's token) stops the old
+// subscription and carries its unused traffic into the newly created one, even
+// in single-model mode.
+func TestFulfillChangeSubscriptionStopsOldAndCarriesTraffic(t *testing.T) {
+	users := &activationUserRepo{
+		user: &userEntity.User{Id: 7},
+		subscription: &usersub.Subscribe{
+			Id: 11, UserId: 7, SubscribeId: 9, Token: "old-token",
+			Traffic: 200, Download: 50, Upload: 50, Status: usersub.SubscribeStatusActive,
+		},
+	}
+	store := &activationStore{
+		users: users,
+		orders: &activationOrderRepo{order: &orderEntity.Order{
+			OrderNo: "change-order", UserId: 7, Type: OrderTypeSubscribe, Status: OrderStatusPaid,
+			SubscribeId: 10, SubscribeToken: "old-token", Quantity: 1,
+		}},
+		subscribes: &activationSubscribeRepo{subscribe: &subscribeEntity.Subscribe{Id: 10, UnitTime: "Month", Traffic: 1000}},
+		logs:       &activationLogRepo{},
+		inbox:      newActivationInboxRepo(),
+	}
+	svcCtx := newActivationSvc(store, true)
+
+	if _, err := svcCtx.Subscription.FulfillPaidOrder(context.Background(), "change-order"); err != nil {
+		t.Fatalf("activate change subscription: %v", err)
+	}
+	if store.users.subscription.Status != usersub.SubscribeStatusStopped {
+		t.Fatalf("old status = %d, want stopped", store.users.subscription.Status)
+	}
+	if len(store.users.inserted) != 1 {
+		t.Fatalf("inserted = %d, want 1", len(store.users.inserted))
+	}
+	inserted := store.users.inserted[0]
+	if inserted.Token == "" {
+		t.Fatal("inserted subscription has empty token")
+	}
+	// new quota = 1000 + (200 - 50 - 50) = 1100
+	if inserted.Traffic != 1100 {
+		t.Fatalf("inserted traffic = %d, want 1100", inserted.Traffic)
+	}
 }

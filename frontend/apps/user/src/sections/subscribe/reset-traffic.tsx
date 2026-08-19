@@ -61,6 +61,12 @@ export default function ResetTraffic({
           <DialogDescription>
             {t("resetTrafficDescription", "Reset your subscription traffic")}
           </DialogDescription>
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "unusedTrafficCarriedOver",
+              "Your unused traffic will be carried over."
+            )}
+          </p>
         </DialogHeader>
         <div className="flex flex-col justify-between text-sm">
           <div className="grid gap-3">

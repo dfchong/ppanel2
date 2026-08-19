@@ -151,16 +151,6 @@ func TestRenewalPreviewValidatesTargetBeforeSkippingQuota(t *testing.T) {
 			wantError: "does not belong to current user",
 		},
 		{
-			name: "different plan",
-			subscription: &usersub.Subscribe{
-				Id:          22,
-				UserId:      42,
-				SubscribeId: 11,
-				Status:      usersub.SubscribeStatusActive,
-			},
-			wantError: "does not match subscribe plan",
-		},
-		{
 			name: "deducted subscription",
 			subscription: &usersub.Subscribe{
 				Id:          22,
@@ -196,6 +186,36 @@ func TestRenewalPreviewValidatesTargetBeforeSkippingQuota(t *testing.T) {
 			}
 		})
 	}
+
+	// A subscription whose plan differs from the requested one is now a valid
+	// change-subscription preview (the old plan-match rejection was removed).
+	t.Run("different plan is a change preview", func(t *testing.T) {
+		users := &policyUserSubs{
+			quotaCount: 1,
+			subscription: &usersub.Subscribe{
+				Id:          22,
+				UserId:      42,
+				SubscribeId: 11,
+				Status:      usersub.SubscribeStatusActive,
+			},
+		}
+		svc := NewService(Deps{
+			UserSubs: users,
+			Plans:    policyPlans{subscribe: &subscribe.Subscribe{Id: 10, Quota: 1}},
+		})
+
+		_, err := svc.PreCreateOrder(ownerContext(42), &dto.PurchaseOrderRequest{
+			SubscribeId:     10,
+			UserSubscribeId: 22,
+			Quantity:        1,
+		})
+		if err != nil {
+			t.Fatalf("PreCreateOrder change preview error = %v, want nil", err)
+		}
+		if users.quotaCountCalls != 0 {
+			t.Fatalf("CountQuotaConsumingSubscriptions calls = %d, want 0", users.quotaCountCalls)
+		}
+	})
 }
 
 func boolPtr(value bool) *bool { return &value }

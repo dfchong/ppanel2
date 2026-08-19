@@ -121,6 +121,12 @@ export default function Renewal({ id, subscribe }: Readonly<RenewalProps>) {
             {t("renewSubscription", "Renew Subscription")}
           </DialogTitle>
         </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          {t(
+            "unusedTrafficCarriedOver",
+            "Your unused traffic will be carried over to the new cycle."
+          )}
+        </p>
         <div className="grid w-full gap-3 lg:grid-cols-2">
           <Card className="border-transparent shadow-none md:border-inherit md:shadow">
             <CardContent className="grid gap-3 p-0 text-sm md:p-6">

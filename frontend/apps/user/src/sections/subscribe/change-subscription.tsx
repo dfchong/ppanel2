@@ -44,9 +44,21 @@ export default function ChangeSubscription({
     },
   });
 
-  // 其它可购买的套餐（排除当前已订阅套餐）
+  // 其它可购买的套餐（排除当前已订阅套餐）。限时与不限时订阅不可互转，
+  // 因此仅允许"限时→限时 / 不限时→不限时"变更。
+  const currentNoLimit = subscribe.unit_time === "NoLimit";
   const alternatives = subscribeList?.filter(
-    (item) => item.id !== subscribe.id && item.show
+    (item) =>
+      item.id !== subscribe.id &&
+      item.show &&
+      (item.unit_time === "NoLimit") === currentNoLimit
+  );
+  // 是否存在被限时规则过滤掉的其它可购套餐（用于区分空态文案）
+  const crossLimitBlocked = subscribeList?.some(
+    (item) =>
+      item.id !== subscribe.id &&
+      item.show &&
+      (item.unit_time === "NoLimit") !== currentNoLimit
   );
 
   return (
@@ -88,6 +100,13 @@ export default function ChangeSubscription({
                   </Button>
                 );
               })
+            ) : crossLimitBlocked ? (
+              <p className="text-muted-foreground text-sm">
+                {t(
+                  "changeSubscriptionCrossLimitHint",
+                  "Changing between limited and no-limit subscriptions is not supported. Please unsubscribe first, then buy the new plan."
+                )}
+              </p>
             ) : (
               <p className="text-muted-foreground text-sm">
                 {t(
@@ -103,6 +122,7 @@ export default function ChangeSubscription({
         setSubscribe={setTarget}
         subscribe={target}
         title={t("changeSubscriptionTitle", "Change Subscription")}
+        fromUserSubscribeId={subscribe.id}
       />
     </>
   );
