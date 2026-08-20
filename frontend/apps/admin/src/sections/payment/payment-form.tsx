@@ -106,7 +106,11 @@ export default function PaymentForm<T extends { platform?: string }>({
   );
   const currentFieldDescriptions =
     currentPlatform?.platform_field_description || {};
-  const configFields = Object.keys(currentFieldDescriptions) || [];
+  // EPay 支付通道自行选择支付方式（如支付宝/微信），无需管理员配置 Type，
+  // 因此从前端编辑表单中排除该字段。
+  const configFields = Object.keys(currentFieldDescriptions).filter(
+    (field) => !(platformValue === "EPay" && field === "type")
+  ) || [];
   const platformUrl = currentPlatform?.platform_url || "";
 
   useEffect(() => {
@@ -135,6 +139,16 @@ export default function PaymentForm<T extends { platform?: string }>({
       cleanedValues.fee_amount = undefined;
     } else if (values.fee_mode === 2) {
       cleanedValues.fee_percent = undefined;
+    }
+
+    // EPay 支付通道自行选择支付方式，保存/更新时不再指定 Type 参数
+    if (
+      values.platform === "EPay" &&
+      cleanedValues.config &&
+      typeof cleanedValues.config === "object"
+    ) {
+      const { type: _type, ...restConfig } = cleanedValues.config;
+      cleanedValues.config = restConfig;
     }
 
     const success = await onSubmit(cleanedValues as unknown as T);

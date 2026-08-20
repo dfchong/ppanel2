@@ -440,7 +440,10 @@ func (s *Service) settleEPayOrder(ctx context.Context, orderInfo *order.Order, u
 		return false, fmt.Errorf("cannot safely reconcile paid EPay order %s: gateway query has no transaction details", orderInfo.OrderNo)
 	}
 	amount, err := epay.ParseMoney(result.Money)
-	if err != nil || result.OrderNo != orderInfo.OrderNo || result.MerchantID != config.Pid || result.Type != config.Type || amount != orderInfo.PaymentAmount || result.TradeNo == "" {
+	// A channel may be configured to let the gateway pick the payment method
+	// (empty config type); in that case any type the gateway reports is
+	// expected, so only compare when the config pinned a concrete type.
+	if err != nil || result.OrderNo != orderInfo.OrderNo || result.MerchantID != config.Pid || (config.Type != "" && result.Type != config.Type) || amount != orderInfo.PaymentAmount || result.TradeNo == "" {
 		return false, fmt.Errorf("EPay order %s query does not match payment expectation", orderInfo.OrderNo)
 	}
 	if err := s.settleVerifiedPayment(ctx, orderInfo, result.TradeNo); err != nil {

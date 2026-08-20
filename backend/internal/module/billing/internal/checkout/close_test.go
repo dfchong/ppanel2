@@ -221,6 +221,39 @@ func epayCloseFixture(gatewayURL string) (*closeOrderStore, *Service) {
 	return store, svc
 }
 
+// epaySettleFixture wires a pending ¥10.00 EPay order against a fake gateway
+// that reports the order as paid through the standard api.php query. configType
+// is the type persisted in the payment config — empty when the channel is left
+// to pick its own payment method — while gatewayType is what the query response
+// reports back.
+func epaySettleFixture(t *testing.T, configType, gatewayType string) (*closeOrderStore, *Service, *closeQueue) {
+	t.Helper()
+	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprintf(w, `{"code":1,"msg":"ok","pid":1001,"trade_no":"epay-trade-1","out_trade_no":"epay-order","type":%q,"money":"10.00","status":1}`, gatewayType)
+	}))
+	t.Cleanup(gateway.Close)
+
+	orders := &closeOrderRepo{
+		order: &orderEntity.Order{
+			Id: 1, OrderNo: "epay-order", Status: 1, UserId: 7,
+			Method: "EPay", PaymentId: 2, PaymentCurrency: "CNY", PaymentAmount: 1000,
+		},
+		transition: true,
+	}
+	store := &closeOrderStore{orders: orders}
+	queue := &closeQueue{}
+	svc := NewService(Deps{
+		Orders: orders,
+		Payments: &closePaymentRepo{method: &paymentEntity.Payment{
+			Id: 2, Platform: "EPay",
+			Config: fmt.Sprintf(`{"pid":"1001","url":%q,"key":"secret","type":%q}`, gateway.URL, configType),
+		}},
+		Store: store,
+		Queue: queue,
+	})
+	return store, svc, queue
+}
+
 func (r *closeOrderRepo) MarkOrderPaid(_ context.Context, orderNo, tradeNo string, _ ...*gorm.DB) (bool, error) {
 	if orderNo != r.order.OrderNo || r.order.Status != 1 {
 		return false, nil
@@ -555,6 +588,53 @@ func TestCloseEPayOrderReconcilerStaysStrict(t *testing.T) {
 	}
 	if store.orders.order.Status != 1 {
 		t.Fatalf("status = %d, want still pending", store.orders.order.Status)
+	}
+}
+
+// An EPay channel may be configured to let the gateway pick the payment method
+// (empty config type) or to pin a concrete type. A paid query must settle when
+// no type was pinned — the gateway reporting any concrete type is expected —
+// and must keep the exact type comparison when one was configured.
+func TestCloseEPayOrderSettleTypeComparison(t *testing.T) {
+	tests := []struct {
+		name        string
+		configType  string
+		gatewayType string
+		wantPaid    bool
+	}{
+		{name: "empty config type accepts any gateway type", configType: "", gatewayType: "alipay", wantPaid: true},
+		{name: "matching configured type settles", configType: "alipay", gatewayType: "alipay", wantPaid: true},
+		{name: "mismatched configured type stays pending", configType: "alipay", gatewayType: "qqpay", wantPaid: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store, svc, queue := epaySettleFixture(t, tt.configType, tt.gatewayType)
+			err := svc.Close(context.Background(), &dto.CloseOrderRequest{OrderNo: "epay-order"})
+			if !tt.wantPaid {
+				if err == nil {
+					t.Fatal("Close accepted a paid trade whose gateway type differs from the configured type")
+				}
+				if store.orders.order.Status != 1 {
+					t.Fatalf("status = %d, want still pending", store.orders.order.Status)
+				}
+				if len(queue.activations) != 0 {
+					t.Fatal("mismatched type must not activate the order")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Close: %v", err)
+			}
+			if store.orders.order.Status != 2 {
+				t.Fatalf("status = %d, want paid", store.orders.order.Status)
+			}
+			if store.orders.order.TradeNo != "epay-trade-1" {
+				t.Fatalf("tradeNo = %q, want the gateway trade number", store.orders.order.TradeNo)
+			}
+			if len(queue.activations) != 1 || queue.activations[0] != "epay-order" {
+				t.Fatalf("activations = %v, want the settled order enqueued once", queue.activations)
+			}
+		})
 	}
 }
 
