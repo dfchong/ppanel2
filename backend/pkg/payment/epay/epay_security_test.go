@@ -233,6 +233,45 @@ func TestQueryOrderTreatsNonJSONResponseAsUnsupported(t *testing.T) {
 	}
 }
 
+// TestVerifySignAcceptsAlternateKeyPrefixFormat verifies that signatures using
+// the "&key=" prefix format (used by modified EPay gateways like 彩虹易支付)
+// are accepted alongside the standard format.
+func TestVerifySignAcceptsAlternateKeyPrefixFormat(t *testing.T) {
+	client := NewClient("merchant-1", "https://pay.example", "secret", "alipay")
+	params := map[string]string{
+		"pid":          "merchant-1",
+		"out_trade_no": "order-1",
+		"trade_no":     "trade-1",
+		"money":        "10.00",
+		"trade_status": "TRADE_SUCCESS",
+		"type":         "alipay",
+		"sign_type":    "MD5",
+	}
+
+	// Standard format: params + key (no prefix)
+	standardSign := client.createSign(params)
+	params["sign"] = standardSign
+	if !client.VerifySign(params) {
+		t.Fatal("standard format signature must be accepted")
+	}
+
+	// Alternate format: params + "&key=" + key
+	altSign := client.createSignAlternate(params)
+	if altSign == standardSign {
+		t.Fatal("alternate sign must differ from standard sign")
+	}
+	params["sign"] = altSign
+	if !client.VerifySign(params) {
+		t.Fatal("alternate (&key= prefix) format signature must also be accepted")
+	}
+
+	// Random sign must still be rejected
+	params["sign"] = "00000000000000000000000000000000"
+	if client.VerifySign(params) {
+		t.Fatal("random sign must be rejected")
+	}
+}
+
 func TestQueryOrderDoesNotTreatOtherHTTPFailuresAsUnsupported(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "gateway failure", http.StatusInternalServerError)

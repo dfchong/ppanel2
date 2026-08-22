@@ -53,16 +53,23 @@ func PaymentNotifyHandler(svcCtx *svc.ServiceContext) app.HandlerFunc {
 		case payment.EPay:
 			params, err := uniqueFormValues(nativeFormValues(ctx))
 			if err != nil {
-				logger.WithContext(c).Errorw("[PaymentNotifyHandler] ShouldBind failed", logger.Field("error", err.Error()))
+				logger.WithContext(c).Errorw("[PaymentNotifyHandler] Parse form values failed", logger.Field("error", err.Error()))
 				ctx.String(consts.StatusBadRequest, "invalid request")
 				return
 			}
+			logger.WithContext(c).Infow("[PaymentNotifyHandler] EPay callback received",
+				logger.Field("out_trade_no", params["out_trade_no"]),
+				logger.Field("trade_no", params["trade_no"]),
+				logger.Field("trade_status", params["trade_status"]),
+				logger.Field("money", params["money"]),
+				logger.Field("method", string(ctx.Method())),
+			)
 			req := epayNotifyRequest(params)
 			if err := svcCtx.Billing.EPayNotify(c, billing.EPayNotifyMeta{
 				Method: string(ctx.Method()),
 				Params: params,
 			}, req); err != nil {
-				logger.WithContext(c).Errorf("EPayNotify failed: %v", err.Error())
+				logger.WithContext(c).Errorf("[PaymentNotifyHandler] EPayNotify failed: %v", err.Error())
 				ctx.String(consts.StatusBadRequest, err.Error())
 				return
 			}

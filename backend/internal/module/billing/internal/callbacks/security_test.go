@@ -364,6 +364,50 @@ func TestAlipayCallbackRequiresBoundAppAndExactAmount(t *testing.T) {
 	}
 }
 
+// TestEPayNotifySettlesWithSignedCallbackWhenQueryFails verifies that when the
+// gateway's order query returns a hard error (not ErrQueryNotSupported), the
+// settlement still proceeds using the already signature-verified callback.
+// This is critical because many EPay-compatible gateways have non-standard or
+// broken query APIs.
+func TestEPayNotifySettlesWithSignedCallbackWhenQueryFails(t *testing.T) {
+	// Gateway returns 500 on query — this is a hard error, not ErrQueryNotSupported.
+	queryServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+	}))
+	defer queryServer.Close()
+
+	queue := &fakeActivationQueue{}
+
+	paymentConfig := &payment.Payment{
+		Id:       10,
+		Platform: "EPay",
+		Config:   `{"pid":"1001","url":"` + queryServer.URL + `","key":"secret","type":"alipay"}`,
+	}
+	orders := &callbackOrderRepo{order: &order.Order{
+		OrderNo: "order-1", PaymentId: 10, Method: "EPay", Status: settle.StatusPending,
+		PaymentAmount: 1000, PaymentCurrency: "CNY",
+	}}
+	params := map[string]string{
+		"pid": "1001", "trade_no": "trade-1", "out_trade_no": "order-1", "type": "alipay",
+		"name": "product", "money": "10.00", "trade_status": "TRADE_SUCCESS", "param": "", "sign_type": "MD5",
+	}
+	params["sign"] = signEPayTestParams(params, "secret")
+	ctx := context.WithValue(context.Background(), constant.CtxKeyPayment, paymentConfig)
+	svc := NewService(orders, queue)
+	meta := EPayNotifyMeta{Method: "POST", Params: params}
+
+	req := &dto.EPayNotifyRequest{
+		Pid: "1001", TradeNo: "trade-1", OutTradeNo: "order-1", Type: "alipay", Name: "product",
+		Money: "10.00", TradeStatus: "TRADE_SUCCESS", Sign: params["sign"], SignType: "MD5",
+	}
+	if err := svc.EPayNotify(ctx, meta, req); err != nil {
+		t.Fatalf("EPayNotify must settle even when query fails: %v", err)
+	}
+	if orders.markCount != 1 || orders.order.Status != settle.StatusPaid || orders.order.TradeNo != "trade-1" {
+		t.Fatalf("order was not settled after query failure: %+v, marks=%d", orders.order, orders.markCount)
+	}
+}
+
 func signEPayTestParams(params map[string]string, key string) string {
 	keys := make([]string, 0, len(params))
 	for name, value := range params {

@@ -7,6 +7,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/perfect-panel/server/internal/svc"
 	"github.com/perfect-panel/server/pkg/constant"
+	"github.com/perfect-panel/server/pkg/logger"
 )
 
 type PaymentParams struct {
@@ -22,6 +23,8 @@ func NotifyMiddleware(svc *svc.ServiceContext) app.HandlerFunc {
 		}
 		ctx, err := PaymentNotifyContext(ctx, svc, params.Platform, params.Token)
 		if err != nil {
+			logger.WithContext(ctx).Errorf("[NotifyMiddleware] Payment notify context failed: platform=%s, token=%s, error=%v",
+				params.Platform, params.Token, err)
 			requestCtx.JSON(400, map[string]string{"error": err.Error()})
 			requestCtx.Abort()
 			return

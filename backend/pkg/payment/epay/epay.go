@@ -116,6 +116,16 @@ func (c *Client) CreatePayUrl(order Order) (string, error) {
 }
 
 func (c *Client) createSign(params map[string]string) string {
+	return c.createSignWithKeyFormat(params, false)
+}
+
+// createSignAlternate produces the signature using the "&key=" prefix format
+// used by some EPay-compatible variants (e.g. 彩虹易支付).
+func (c *Client) createSignAlternate(params map[string]string) string {
+	return c.createSignWithKeyFormat(params, true)
+}
+
+func (c *Client) createSignWithKeyFormat(params map[string]string, withKeyPrefix bool) string {
 	keys := make([]string, 0, len(params))
 	for k := range params {
 		if params[k] != "" && k != "sign" && k != "sign_type" {
@@ -128,17 +138,30 @@ func (c *Client) createSign(params map[string]string) string {
 		parts = append(parts, k+"="+params[k])
 	}
 	queryString := strings.Join(parts, "&")
-	text := queryString + c.Key
+	var text string
+	if withKeyPrefix {
+		text = queryString + "&key=" + c.Key
+	} else {
+		text = queryString + c.Key
+	}
 	return tool.Md5Encode(text, false)
 }
 
+// VerifySign verifies the callback signature. It first checks the standard
+// EPay format (queryString + key) and, if that does not match, tries the
+// alternate "&key=" prefix format used by some modified EPay gateways
+// (e.g. 彩虹易支付).
 func (c *Client) VerifySign(params map[string]string) bool {
-	expected := c.createSign(params)
 	received := strings.ToLower(params["sign"])
-	if len(expected) != len(received) || len(received) == 0 {
+	if received == "" {
 		return false
 	}
-	return subtle.ConstantTimeCompare([]byte(expected), []byte(received)) == 1
+	// Try standard format first.
+	if subtle.ConstantTimeCompare([]byte(c.createSign(params)), []byte(received)) == 1 {
+		return true
+	}
+	// Fallback: alternate format with "&key=" prefix.
+	return subtle.ConstantTimeCompare([]byte(c.createSignAlternate(params)), []byte(received)) == 1
 }
 
 // QueryOrder obtains payment details directly from the gateway. It first uses

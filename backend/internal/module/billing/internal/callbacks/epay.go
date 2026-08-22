@@ -82,17 +82,15 @@ func (s *Service) EPayNotify(ctx context.Context, meta EPayNotifyMeta, req *dto.
 
 	queried, err := client.QueryOrder(req.OutTradeNo)
 	if err != nil {
-		if errors.Is(err, epay.ErrQueryNotSupported) {
-			// This gateway does not implement the order query API.
-			// The callback signature was already verified above, so it is safe
-			// to proceed without the active confirmation step.
-			l.Infow("[EPayNotify] Gateway does not support order query; accepting signature-verified callback",
-				logger.Field("orderNo", req.OutTradeNo),
-			)
-		} else {
-			l.Error("[EPayNotify] Gateway order query failed", logger.Field("orderNo", req.OutTradeNo), logger.Field("error", err.Error()))
-			return err
-		}
+		// The callback signature was already verified above and all callback
+		// fields have been validated. Gateway query is a defense-in-depth step;
+		// when it fails (unsupported API, transient HTTP errors, non-standard
+		// response format, etc.), we log the error and proceed with settlement
+		// rather than blocking a legitimate payment.
+		l.Infow("[EPayNotify] Gateway order query failed; proceeding with signature-verified callback",
+			logger.Field("orderNo", req.OutTradeNo),
+			logger.Field("error", err.Error()),
+		)
 	} else {
 		if err := validateQueriedEPayOrder(queried, req, credentials, callbackAmount); err != nil {
 			l.Error("[EPayNotify] Gateway order validation failed", logger.Field("orderNo", req.OutTradeNo), logger.Field("error", err.Error()))
